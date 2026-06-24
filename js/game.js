@@ -7,6 +7,7 @@ class Game {
 
         this.scoreElement = document.getElementById('score');
         this.coinsElement = document.getElementById('coins');
+        this.worldElement = document.getElementById('world');
         this.overlay = document.getElementById('overlay');
         this.overlayText = document.getElementById('overlayText');
         this.subText = document.getElementById('subText');
@@ -60,11 +61,38 @@ class Game {
         this.spawnCoins();
 
         this.cameraX = 0;
+        this.updateWorldDisplay();
+    }
+
+    nextLevel() {
+        if (this.state.currentLevel >= this.state.totalLevels) {
+            this.showOverlay('YOU WIN!', `Final Score: ${this.player.score}`);
+            return;
+        }
+
+        this.state.currentLevel++;
+        this.state.state = this.state.LEVEL_TRANSITION;
+        this.showOverlay(
+            `WORLD 1-${this.state.currentLevel}`,
+            'Get Ready!'
+        );
+
+        setTimeout(() => {
+            this.hideOverlay();
+            this.reset();
+        }, 2000);
+    }
+
+    resetToLevel1() {
+        this.state.currentLevel = 1;
+        this.reset();
     }
 
     buildLevel() {
         this.tiles = [];
-        this.levelMap = generateLevelMap();
+        this.levelMap = generateLevelMap(this.state.currentLevel);
+        this.levelWidth = this.levelMap[0].length * CONFIG.TILE_SIZE;
+        this.renderer.setLevel(this.state.currentLevel);
 
         for (let row = 0; row < this.levelMap.length; row++) {
             for (let col = 0; col < this.levelMap[row].length; col++) {
@@ -82,8 +110,32 @@ class Game {
         }
     }
 
+    updateWorldDisplay() {
+        if (this.worldElement) {
+            this.worldElement.textContent = `WORLD 1-${this.state.currentLevel}`;
+        }
+    }
+
     spawnEnemies() {
-        const enemyPositions = [22, 35, 36, 50, 58, 59, 70, 78, 80, 95, 96, 108, 109, 125, 126, 135, 148];
+        const level = this.state.currentLevel;
+        let enemyPositions;
+
+        if (level === 2) {
+            // Level 2: More enemies, spread across longer level
+            enemyPositions = [
+                15, 18, 19, 30, 31, 33, 40, 41,
+                52, 53, 55, 60, 61, 63, 65,
+                78, 79, 82, 83, 88, 89,
+                100, 101, 105, 106,
+                115, 116, 120, 121,
+                130, 131, 135, 136,
+                145, 146, 150, 151,
+                160, 165, 166,
+                175, 176, 180, 185, 186
+            ];
+        } else {
+            enemyPositions = [22, 35, 36, 50, 58, 59, 70, 78, 80, 95, 96, 108, 109, 125, 126, 135, 148];
+        }
 
         enemyPositions.forEach(col => {
             this.enemies.push(new Goomba(col * CONFIG.TILE_SIZE, 11 * CONFIG.TILE_SIZE));
@@ -110,6 +162,11 @@ class Game {
     }
 
     update() {
+        if (this.state.state === this.state.LEVEL_TRANSITION) {
+            this.updateCamera();
+            return;
+        }
+
         if (this.state.state === this.state.DEAD) {
             this.player.update(this.input.keys, this.tiles);
             if (this.player.y > this.levelMap.length * CONFIG.TILE_SIZE + 100) {
@@ -140,7 +197,7 @@ class Game {
                 if (this.player.x >= fa.castleX) {
                     fa.phase = 'done';
                     this.state.state = this.state.WIN;
-                    this.showOverlay('LEVEL CLEAR!', `Score: ${this.player.score} (Height Bonus: +${fa.heightBonus})`);
+                    this.nextLevel();
                 }
             }
             this.updateCamera();
@@ -217,11 +274,12 @@ class Game {
             for (const tile of this.tiles) {
                 if (tile.type === 9 && this.collides(pb, tile)) {
                     const T = CONFIG.TILE_SIZE;
+                    const flagCol = Math.floor(tile.x / T);
                     const heightBonus = Math.max(0, Math.floor((12 * T - this.player.y) / T) * 100);
                     this.player.score += heightBonus + 1000;
                     this.player.velX = 0;
                     this.player.velY = 0;
-                    this.player.x = 155 * T + 2;
+                    this.player.x = flagCol * T + 2;
                     this.player.facingRight = true;
                     this.flagAnim = {
                         phase: 'slide',
@@ -229,7 +287,7 @@ class Game {
                         flagCurrentY: 4 * T,
                         flagEndY: 11 * T,
                         groundY: 12 * T - this.player.height,
-                        castleX: 163 * T,
+                        castleX: (flagCol + 5) * T,
                         heightBonus: heightBonus
                     };
                     this.state.state = this.state.FLAGPOLE;

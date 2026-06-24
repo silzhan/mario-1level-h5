@@ -4,6 +4,7 @@ class Renderer {
         this.sprites = {};
         this.loaded = false;
         this.animTimer = 0;
+        this.currentLevel = 1;
     }
 
     async loadSprites() {
@@ -34,9 +35,42 @@ class Renderer {
         this.loaded = true;
     }
 
+    setLevel(level) {
+        this.currentLevel = level;
+    }
+
     clear() {
-        this.ctx.fillStyle = COLORS.SKY;
-        this.ctx.fillRect(0, 0, CONFIG.SCREEN_WIDTH, CONFIG.SCREEN_HEIGHT);
+        if (this.currentLevel === 2) {
+            // Underground theme - dark blue/black
+            this.ctx.fillStyle = '#1a0a2e';
+            this.ctx.fillRect(0, 0, CONFIG.SCREEN_WIDTH, CONFIG.SCREEN_HEIGHT);
+
+            // Add some underground atmosphere
+            this.ctx.fillStyle = 'rgba(0, 0, 30, 0.3)';
+            for (let i = 0; i < 5; i++) {
+                const x = (this.animTimer * 0.2 + i * 200) % (CONFIG.SCREEN_WIDTH + 100) - 50;
+                const y = 100 + i * 120;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 30, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        } else {
+            // Day theme
+            this.ctx.fillStyle = '#5c94fc';
+            this.ctx.fillRect(0, 0, CONFIG.SCREEN_WIDTH, CONFIG.SCREEN_HEIGHT);
+
+            // Clouds
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 3; i++) {
+                const cloudX = ((this.animTimer * 0.3 + i * 300) % (CONFIG.SCREEN_WIDTH + 200)) - 100;
+                const cloudY = 80 + i * 60;
+                this.ctx.beginPath();
+                this.ctx.arc(cloudX, cloudY, 20, 0, Math.PI * 2);
+                this.ctx.arc(cloudX + 25, cloudY - 5, 25, 0, Math.PI * 2);
+                this.ctx.arc(cloudX + 50, cloudY, 20, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
     }
 
     drawTiles(levelMap, cameraX, flagY) {
@@ -45,10 +79,14 @@ class Renderer {
         const endCol = Math.min(levelMap[0].length,
             Math.ceil((cameraX + CONFIG.SCREEN_WIDTH) / CONFIG.TILE_SIZE) + 1);
 
+        let flagpoleCol = -1;
+
         for (let row = 0; row < levelMap.length; row++) {
             for (let col = startCol; col < endCol; col++) {
                 const tile = levelMap[row][col];
                 if (tile === 0) continue;
+
+                if (tile === 9) flagpoleCol = col;
 
                 const x = col * CONFIG.TILE_SIZE - cameraX;
                 const y = row * CONFIG.TILE_SIZE;
@@ -170,8 +208,8 @@ class Renderer {
             }
         }
 
-        if (flagY !== undefined) {
-            const poleX = 155 * CONFIG.TILE_SIZE - cameraX;
+        if (flagY !== undefined && flagpoleCol >= 0) {
+            const poleX = flagpoleCol * CONFIG.TILE_SIZE - cameraX;
             if (poleX > -CONFIG.TILE_SIZE && poleX < CONFIG.SCREEN_WIDTH + CONFIG.TILE_SIZE) {
                 this.ctx.fillStyle = '#228b22';
                 this.ctx.beginPath();

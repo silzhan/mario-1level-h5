@@ -15,7 +15,7 @@
                 <span class="block brick-block"></span>
             </div>
             <h1 class="title">SUPER MARIO</h1>
-            <h2 class="subtitle">WORLD 1-1</h2>
+            <h2 class="subtitle" id="worldTitle">WORLD 1-1</h2>
             <button id="startBtn">START</button>
             <div class="title-hint">Press ENTER or click to start</div>
         </div>
@@ -23,12 +23,12 @@
         <div id="ui">
             <div>SCORE: <span id="score">0</span></div>
             <div>COINS: <span id="coins">0</span></div>
-            <div>WORLD 1-1</div>
+            <div id="world">WORLD 1-1</div>
         </div>
         <div id="overlay">
             <div id="overlayText">LEVEL CLEAR!</div>
             <div id="subText" style="font-size: 24px; margin-top: 10px;"></div>
-            <button onclick="game.reset()">PLAY AGAIN</button>
+            <button onclick="game.resetToLevel1()">PLAY AGAIN</button>
         </div>
     </div>
 
