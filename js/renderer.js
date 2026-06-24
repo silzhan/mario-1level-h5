@@ -226,7 +226,7 @@ class Renderer {
         // 无敌闪烁效果
         if (player.isInvincible && player.invincibleTimer > 0) {
             if (Math.floor(player.invincibleTimer / 4) % 2 === 0) {
-                return; // 跳过这一帧，产生闪烁
+                return;
             }
         }
 
@@ -244,17 +244,6 @@ class Renderer {
             sprite = this.sprites['mario-idle'];
         }
 
-        if (!sprite) {
-            // Fallback: 绘制像素马里奥
-            this.ctx.fillStyle = COLORS.MARIO_RED;
-            this.ctx.fillRect(x, y, player.width, player.height);
-            this.ctx.fillStyle = COLORS.MARIO_SKIN;
-            this.ctx.fillRect(x + 4, y + 4, player.width - 8, 10);
-            this.ctx.fillStyle = COLORS.MARIO_BLUE;
-            this.ctx.fillRect(x + 2, y + 14, player.width - 4, 12);
-            return;
-        }
-
         this.ctx.save();
         if (!player.facingRight) {
             this.ctx.translate(x + player.width / 2, 0);
@@ -263,21 +252,55 @@ class Renderer {
         }
 
         if (player.isBig) {
-            // 大马里奥：整体放大 + 绘制身体下半部分
-            const scale = player.height / T; // 56/32 = 1.75
-            const bigW = T * scale;
-            const bigH = player.height;
-            // 放大绘制上半身
-            this.ctx.drawImage(sprite, x - 4, y - 4, bigW, bigH * 0.55);
-            // 绘制裤腿
+            // 大马里奥 = 上半身(放大精灵) + 下半身(蓝色裤腿)
+            const headH = 38;
+            const bodyY = y + headH;
+            const bodyH = player.height - headH;
+
+            // 上半身：精灵放大 1.35 倍绘制（不拉伸变形）
+            const upScale = 1.35;
+            const upW = player.width * upScale;  // ~38
+            const upH = headH;                     // 38
+            const upX = x - (upW - player.width) / 2; // 居中
+            const upY = y;
+
+            if (sprite) {
+                this.ctx.drawImage(sprite, upX, upY, upW, upH);
+            } else {
+                // fallback: 纯色大头
+                this.ctx.fillStyle = COLORS.MARIO_RED;
+                this.ctx.fillRect(upX, upY, upW, upH);
+                this.ctx.fillStyle = COLORS.MARIO_SKIN;
+                this.ctx.fillRect(upX + 6, upY + 8, upW - 12, 12);
+            }
+
+            // 下半身：蓝色裤腿 + 棕色鞋
             this.ctx.fillStyle = COLORS.MARIO_BLUE;
-            this.ctx.fillRect(x + 2, y + bigH * 0.5, bigW - 4, bigH * 0.35);
-            // 鞋子
-            this.ctx.fillStyle = '#8B4513';
-            this.ctx.fillRect(x, y + bigH - 6, 10, 6);
-            this.ctx.fillRect(x + bigW - 10, y + bigH - 6, 10, 6);
+            this.ctx.fillRect(x + 4, bodyY, player.width - 8, bodyH - 8);
+            // 背带
+            this.ctx.fillStyle = COLORS.MARIO_BLUE;
+            this.ctx.fillRect(x + 6, bodyY, 4, 8);
+            this.ctx.fillRect(x + player.width - 10, bodyY, 4, 8);
+            // 鞋
+            this.ctx.fillStyle = '#6b3410';
+            this.ctx.fillRect(x + 2, bodyY + bodyH - 8, 12, 8);
+            this.ctx.fillRect(x + player.width - 14, bodyY + bodyH - 8, 12, 8);
+            // 鞋头高光
+            this.ctx.fillStyle = '#8b6914';
+            this.ctx.fillRect(x + 2, bodyY + bodyH - 8, 12, 3);
+            this.ctx.fillRect(x + player.width - 14, bodyY + bodyH - 8, 12, 3);
+
         } else {
-            this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
+            if (sprite) {
+                this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
+            } else {
+                this.ctx.fillStyle = COLORS.MARIO_RED;
+                this.ctx.fillRect(x, y, player.width, player.height);
+                this.ctx.fillStyle = COLORS.MARIO_SKIN;
+                this.ctx.fillRect(x + 4, y + 4, player.width - 8, 10);
+                this.ctx.fillStyle = COLORS.MARIO_BLUE;
+                this.ctx.fillRect(x + 2, y + 14, player.width - 4, 12);
+            }
         }
 
         this.ctx.restore();
