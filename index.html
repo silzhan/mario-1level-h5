@@ -16,8 +16,19 @@
             </div>
             <h1 class="title">SUPER MARIO</h1>
             <h2 class="subtitle" id="worldTitle">WORLD 1-1</h2>
-            <button id="startBtn">START</button>
-            <div class="title-hint">Press ENTER or click to start</div>
+            <div id="levelSelect">
+                <button class="level-btn" data-level="1">
+                    <span class="level-icon">🌿</span>
+                    <span class="level-name">WORLD 1-1</span>
+                    <span class="level-desc"> grassy plains</span>
+                </button>
+                <button class="level-btn" data-level="2">
+                    <span class="level-icon">🕳️</span>
+                    <span class="level-name">WORLD 1-2</span>
+                    <span class="level-desc"> underground</span>
+                </button>
+            </div>
+            <div class="title-hint">Select a level or press ENTER</div>
         </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="ui">

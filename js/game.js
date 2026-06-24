@@ -8,6 +8,7 @@ class Game {
         this.scoreElement = document.getElementById('score');
         this.coinsElement = document.getElementById('coins');
         this.worldElement = document.getElementById('world');
+        this.worldTitle = document.getElementById('worldTitle');
         this.overlay = document.getElementById('overlay');
         this.overlayText = document.getElementById('overlayText');
         this.subText = document.getElementById('subText');
@@ -19,6 +20,7 @@ class Game {
 
         this.titleScreen = document.getElementById('titleScreen');
         this.started = false;
+        this.selectedLevel = 1;
 
         this.init();
     }
@@ -26,21 +28,55 @@ class Game {
     async init() {
         await this.renderer.loadSprites();
 
-        document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+        // Level selection buttons
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.selectedLevel = parseInt(btn.dataset.level);
+                this.updateTitleWorld();
+                this.startGame();
+            });
+        });
+
+        // Also start with START button if it exists (backward compat)
+        const startBtn = document.getElementById('startBtn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => this.startGame());
+        }
+
         document.addEventListener('keydown', (e) => {
             if (!this.started && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
                 this.startGame();
+            }
+
+            // Level selection with number keys on title screen
+            if (!this.started) {
+                if (e.key === '1') {
+                    this.selectedLevel = 1;
+                    this.updateTitleWorld();
+                    this.startGame();
+                } else if (e.key === '2') {
+                    this.selectedLevel = 2;
+                    this.updateTitleWorld();
+                    this.startGame();
+                }
             }
         });
 
         this.renderer.clear();
     }
 
+    updateTitleWorld() {
+        if (this.worldTitle) {
+            this.worldTitle.textContent = `WORLD 1-${this.selectedLevel}`;
+        }
+    }
+
     startGame() {
         if (this.started) return;
         this.started = true;
         this.titleScreen.style.display = 'none';
+        this.state.currentLevel = this.selectedLevel;
         this.reset();
         this.gameLoop();
     }
