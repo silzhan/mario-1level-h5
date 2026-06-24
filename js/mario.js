@@ -13,11 +13,33 @@ class Mario {
         this.score = 0;
         this.coins = 0;
         this.isBig = false;
+        this.isInvincible = false;
+        this.invincibleTimer = 0;
         this.jumpWasPressed = false;
         this.wasOnGround = true;
         this.isJumping = false;
         this.jumpKeyReleased = true;
         this.hitTile = null;
+    }
+
+    becomeBig() {
+        if (this.isBig) return;
+        this.isBig = true;
+        this.height = 56;
+        // 调整位置避免卡进地面
+        this.y -= CONFIG.TILE_SIZE;
+        this.isInvincible = true;
+        this.invincibleTimer = 60;
+    }
+
+    shrink() {
+        if (!this.isBig) return;
+        this.isBig = false;
+        this.height = 30;
+        // 调整位置
+        this.y += CONFIG.TILE_SIZE;
+        this.isInvincible = true;
+        this.invincibleTimer = 120; // 2秒无敌闪烁
     }
 
     update(keys, tiles) {

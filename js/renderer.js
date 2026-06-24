@@ -223,6 +223,13 @@ class Renderer {
     }
 
     drawMario(player, cameraX) {
+        // 无敌闪烁效果
+        if (player.isInvincible && player.invincibleTimer > 0) {
+            if (Math.floor(player.invincibleTimer / 4) % 2 === 0) {
+                return; // 跳过这一帧，产生闪烁
+            }
+        }
+
         const x = player.x - cameraX;
         const y = player.y;
         const T = CONFIG.TILE_SIZE;
@@ -238,8 +245,13 @@ class Renderer {
         }
 
         if (!sprite) {
+            // Fallback: 绘制像素马里奥
             this.ctx.fillStyle = COLORS.MARIO_RED;
             this.ctx.fillRect(x, y, player.width, player.height);
+            this.ctx.fillStyle = COLORS.MARIO_SKIN;
+            this.ctx.fillRect(x + 4, y + 4, player.width - 8, 10);
+            this.ctx.fillStyle = COLORS.MARIO_BLUE;
+            this.ctx.fillRect(x + 2, y + 14, player.width - 4, 12);
             return;
         }
 
@@ -249,8 +261,60 @@ class Renderer {
             this.ctx.scale(-1, 1);
             this.ctx.translate(-(x + player.width / 2), 0);
         }
-        this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
+
+        if (player.isBig) {
+            // 大马里奥：绘制两格高
+            // 上半部分（头+身体）
+            this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
+            // 下半部分（腿部）
+            this.ctx.drawImage(sprite, x - 2, y + T - 2, T, T);
+            // 叠加帽子/头发细节
+            this.ctx.fillStyle = COLORS.MARIO_RED;
+            this.ctx.fillRect(x + 4, y - 2, 20, 8);
+        } else {
+            this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
+        }
+
         this.ctx.restore();
+    }
+
+    drawMushroom(mushroom, cameraX) {
+        if (!mushroom.alive) return;
+
+        const x = mushroom.x - cameraX;
+        const y = mushroom.y;
+        const T = CONFIG.TILE_SIZE;
+
+        // 蘑菇伞盖
+        this.ctx.fillStyle = '#e52521';
+        this.ctx.beginPath();
+        this.ctx.ellipse(x + T / 2, y + 10, T / 2 + 2, T / 2 - 4, 0, Math.PI, 0);
+        this.ctx.fill();
+
+        // 蘑菇斑点
+        this.ctx.fillStyle = '#fff';
+        this.ctx.beginPath();
+        this.ctx.arc(x + T / 2 - 6, y + 4, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.arc(x + T / 2 + 6, y + 4, 4, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // 蘑菇柄
+        this.ctx.fillStyle = '#f5d6a8';
+        this.ctx.fillRect(x + 6, y + 12, T - 12, T - 14);
+
+        // 蘑菇眼睛
+        this.ctx.fillStyle = '#000';
+        this.ctx.beginPath();
+        this.ctx.arc(x + 11, y + 18, 2, 0, Math.PI * 2);
+        this.ctx.arc(x + T - 11, y + 18, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // 蘑菇脚
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(x + 8, y + T - 4, 4, 4);
+        this.ctx.fillRect(x + T - 12, y + T - 4, 4, 4);
     }
 
     drawGoomba(enemy, cameraX) {

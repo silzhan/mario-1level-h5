@@ -91,6 +91,7 @@ class Game {
 
         this.enemies = [];
         this.coins = [];
+        this.mushrooms = [];
 
         this.buildLevel();
         this.spawnEnemies();
@@ -247,24 +248,44 @@ class Game {
         this.player.update(this.input.keys, this.tiles);
         this.updateCamera();
 
-        // Process question block hit
+        // 无敌时间递减
+        if (this.player.invincibleTimer > 0) {
+            this.player.invincibleTimer--;
+        }
+
+        // Process question block hit - spawn mushroom
         if (this.player.hitTile) {
             const tile = this.player.hitTile;
             tile.type = 8;
             const row = Math.floor(tile.y / CONFIG.TILE_SIZE);
             const col = Math.floor(tile.x / CONFIG.TILE_SIZE);
             this.levelMap[row][col] = 8;
-            this.coins.push(new Coin(tile.x + 4, tile.y - 30, true));
-            this.player.coins++;
+            // 从砖块上方生成蘑菇
+            this.mushrooms.push(new Mushroom(tile.x, tile.y - CONFIG.TILE_SIZE));
             this.player.score += 200;
         }
 
         this.enemies = this.enemies.filter(enemy => enemy.update(this.tiles));
 
+        this.mushrooms = this.mushrooms.filter(mushroom => mushroom.update(this.tiles));
+
         this.coins.forEach(coin => coin.update());
         this.coins = this.coins.filter(coin => !coin.collected || coin.isPopCoin);
 
         const playerBounds = this.player.getBounds();
+
+        // Mushroom collection
+        this.mushrooms.forEach(mushroom => {
+            if (!mushroom.alive || mushroom.emerging) return;
+            if (this.collides(playerBounds, mushroom.getBounds())) {
+                mushroom.alive = false;
+                if (!this.player.isBig) {
+                    this.player.becomeBig();
+                }
+                this.player.score += 1000;
+            }
+        });
+
         this.coins.forEach(coin => {
             if (!coin.collected && !coin.isPopCoin && this.collides(playerBounds, coin.getBounds())) {
                 coin.collected = true;
@@ -273,6 +294,7 @@ class Game {
             }
         });
 
+        // Enemy collision with power-up logic
         this.enemies.forEach(enemy => {
             if (!enemy.alive) return;
 
@@ -284,14 +306,24 @@ class Game {
             };
 
             if (this.collides(playerBounds, enemyBounds)) {
+                // 踩踏敌人
                 if (this.player.velY > 0 && playerBounds.y + playerBounds.height < enemyBounds.y + enemyBounds.height / 2 + 5) {
                     enemy.squish();
                     this.player.velY = -8;
                     this.player.score += 200;
-                } else {
-                    this.player.alive = false;
-                    this.player.velY = -10;
-                    this.state.state = this.state.DEAD;
+                }
+                // 受到伤害
+                else if (!this.player.isInvincible) {
+                    if (this.player.isBig) {
+                        // 变大状态受伤 → 变小
+                        this.player.shrink();
+                        this.player.invincibleTimer = 120; // 2秒无敌 (60fps)
+                    } else {
+                        // 小状态受伤 → 死亡
+                        this.player.alive = false;
+                        this.player.velY = -10;
+                        this.state.state = this.state.DEAD;
+                    }
                 }
             }
         });
@@ -341,6 +373,7 @@ class Game {
         const flagY = this.flagAnim ? this.flagAnim.flagCurrentY : 4 * CONFIG.TILE_SIZE;
         this.renderer.drawTiles(this.levelMap, this.cameraX, flagY);
         this.coins.forEach(coin => this.renderer.drawCoin(coin, this.cameraX));
+        this.mushrooms.forEach(mushroom => this.renderer.drawMushroom(mushroom, this.cameraX));
         this.enemies.forEach(enemy => this.renderer.drawGoomba(enemy, this.cameraX));
         this.renderer.drawMario(this.player, this.cameraX);
     }
