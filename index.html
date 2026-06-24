@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Mario World 1-1 - HTML5 Edition</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="titleScreen">
+            <div class="title-blocks">
+                <span class="block brick-block"></span>
+                <span class="block question-block"></span>
+                <span class="block brick-block"></span>
+            </div>
+            <h1 class="title">SUPER MARIO</h1>
+            <h2 class="subtitle">WORLD 1-1</h2>
+            <button id="startBtn">START</button>
+            <div class="title-hint">Press ENTER or click to start</div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>COINS: <span id="coins">0</span></div>
+            <div>WORLD 1-1</div>
+        </div>
+        <div id="overlay">
+            <div id="overlayText">LEVEL CLEAR!</div>
+            <div id="subText" style="font-size: 24px; margin-top: 10px;"></div>
+            <button onclick="game.reset()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <div id="controls">
+        <div>
+            <span class="key">&larr;</span> <span class="key">&rarr;</span> or <span class="key">A</span> <span class="key">D</span> - Move
+        </div>
+        <div>
+            <span class="key">SPACE</span> or <span class="key">&uarr;</span> or <span class="key">W</span> - Jump
+        </div>
+        <div>
+            <span class="key">R</span> - Restart | <span class="key">ESC</span> - Quit
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/game-state.js"></script>
+    <script src="js/mario.js"></script>
+    <script src="js/goomba.js"></script>
+    <script src="js/coin.js"></script>
+    <script src="js/level.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

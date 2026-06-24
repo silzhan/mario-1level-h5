@@ -1,0 +1,18 @@
+{
+  "name": "mario-1level-h5",
+  "version": "1.0.0",
+  "description": "🎮 超级马里奥兄弟一代 World 1-1 的 HTML5 复刻版",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.61.0"
+  },
+  "dependencies": {
+    "sharp": "^0.35.2"
+  }
+}
