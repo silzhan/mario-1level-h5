@@ -263,14 +263,19 @@ class Renderer {
         }
 
         if (player.isBig) {
-            // 大马里奥：绘制两格高
-            // 上半部分（头+身体）
-            this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
-            // 下半部分（腿部）
-            this.ctx.drawImage(sprite, x - 2, y + T - 2, T, T);
-            // 叠加帽子/头发细节
-            this.ctx.fillStyle = COLORS.MARIO_RED;
-            this.ctx.fillRect(x + 4, y - 2, 20, 8);
+            // 大马里奥：整体放大 + 绘制身体下半部分
+            const scale = player.height / T; // 56/32 = 1.75
+            const bigW = T * scale;
+            const bigH = player.height;
+            // 放大绘制上半身
+            this.ctx.drawImage(sprite, x - 4, y - 4, bigW, bigH * 0.55);
+            // 绘制裤腿
+            this.ctx.fillStyle = COLORS.MARIO_BLUE;
+            this.ctx.fillRect(x + 2, y + bigH * 0.5, bigW - 4, bigH * 0.35);
+            // 鞋子
+            this.ctx.fillStyle = '#8B4513';
+            this.ctx.fillRect(x, y + bigH - 6, 10, 6);
+            this.ctx.fillRect(x + bigW - 10, y + bigH - 6, 10, 6);
         } else {
             this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
         }
@@ -284,37 +289,39 @@ class Renderer {
         const x = mushroom.x - cameraX;
         const y = mushroom.y;
         const T = CONFIG.TILE_SIZE;
+        const mw = mushroom.width;
+        const mh = mushroom.height;
 
-        // 蘑菇伞盖
+        // 蘑菇伞盖 (半圆)
         this.ctx.fillStyle = '#e52521';
         this.ctx.beginPath();
-        this.ctx.ellipse(x + T / 2, y + 10, T / 2 + 2, T / 2 - 4, 0, Math.PI, 0);
+        this.ctx.ellipse(x + mw / 2, y + 8, mw / 2 + 1, mh / 2 - 2, 0, Math.PI, 0);
         this.ctx.fill();
 
-        // 蘑菇斑点
+        // 白色斑点
         this.ctx.fillStyle = '#fff';
         this.ctx.beginPath();
-        this.ctx.arc(x + T / 2 - 6, y + 4, 5, 0, Math.PI * 2);
+        this.ctx.arc(x + mw / 2 - 5, y + 5, 4, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.beginPath();
-        this.ctx.arc(x + T / 2 + 6, y + 4, 4, 0, Math.PI * 2);
+        this.ctx.arc(x + mw / 2 + 5, y + 5, 3, 0, Math.PI * 2);
         this.ctx.fill();
 
         // 蘑菇柄
         this.ctx.fillStyle = '#f5d6a8';
-        this.ctx.fillRect(x + 6, y + 12, T - 12, T - 14);
+        this.ctx.fillRect(x + 5, y + 10, mw - 10, mh - 12);
 
-        // 蘑菇眼睛
+        // 眼睛
         this.ctx.fillStyle = '#000';
         this.ctx.beginPath();
-        this.ctx.arc(x + 11, y + 18, 2, 0, Math.PI * 2);
-        this.ctx.arc(x + T - 11, y + 18, 2, 0, Math.PI * 2);
+        this.ctx.arc(x + 9, y + 16, 2, 0, Math.PI * 2);
+        this.ctx.arc(x + mw - 9, y + 16, 2, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // 蘑菇脚
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(x + 8, y + T - 4, 4, 4);
-        this.ctx.fillRect(x + T - 12, y + T - 4, 4, 4);
+        // 脚
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(x + 6, y + mh - 4, 3, 4);
+        this.ctx.fillRect(x + mw - 9, y + mh - 4, 3, 4);
     }
 
     drawGoomba(enemy, cameraX) {

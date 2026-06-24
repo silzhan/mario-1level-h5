@@ -15,6 +15,7 @@ class Mario {
         this.isBig = false;
         this.isInvincible = false;
         this.invincibleTimer = 0;
+        this.prevY = y;  // 上一帧Y位置（用于踩踏判断）
         this.jumpWasPressed = false;
         this.wasOnGround = true;
         this.isJumping = false;
@@ -110,6 +111,9 @@ class Mario {
         }
 
         if (this.x < 0) this.x = 0;
+
+        // 保存上一帧位置（供踩踏判断使用）
+        this.prevY = this.y - this.velY;
     }
 
     resolveTileCollisionX(tiles) {

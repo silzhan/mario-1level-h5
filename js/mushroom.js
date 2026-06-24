@@ -1,23 +1,26 @@
 class Mushroom {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 32;
-        this.height = 32;
+        this.x = x + 2;
+        this.y = y;                          // 从砖块内部开始
+        this.targetY = y - CONFIG.TILE_SIZE; // 目标位置（砖块上方）
+        this.width = 28;
+        this.height = 28;
         this.velX = 1.5;
         this.velY = 0;
         this.alive = true;
-        this.emerging = true;     // 从砖块中冒出动画
-        this.emergeTargetY = y - CONFIG.TILE_SIZE;
+        this.emerging = true;
+        this.emergeProgress = 0;
+        this.emergeSpeed = 0.5;
         this.onGround = false;
     }
 
     update(tiles) {
-        // 冒出动画
+        // 冒出动画：从砖块内升到砖块上方
         if (this.emerging) {
-            this.y -= 1;
-            if (this.y <= this.emergeTargetY) {
-                this.y = this.emergeTargetY;
+            this.emergeProgress += this.emergeSpeed;
+            this.y = this.targetY + CONFIG.TILE_SIZE * (1 - Math.min(1, this.emergeProgress));
+            if (this.emergeProgress >= 1) {
+                this.y = this.targetY;
                 this.emerging = false;
             }
             return true;

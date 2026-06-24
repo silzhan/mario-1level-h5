@@ -268,16 +268,21 @@ class Game {
             this.player.invincibleTimer--;
         }
 
-        // Process question block hit - spawn mushroom
+        // Process question block hit - spawn pop coin + mushroom
         if (this.player.hitTile) {
             const tile = this.player.hitTile;
             tile.type = 8;
             const row = Math.floor(tile.y / CONFIG.TILE_SIZE);
             const col = Math.floor(tile.x / CONFIG.TILE_SIZE);
             this.levelMap[row][col] = 8;
-            // 从砖块上方生成蘑菇
-            this.mushrooms.push(new Mushroom(tile.x, tile.y - CONFIG.TILE_SIZE));
+            // 弹出金币动画
+            this.coins.push(new Coin(tile.x + 4, tile.y - 30, true));
+            this.player.coins++;
             this.player.score += 200;
+            // 有概率出蘑菇 (50%)
+            if (Math.random() < 0.5) {
+                this.mushrooms.push(new Mushroom(tile.x, tile.y));
+            }
         }
 
         this.enemies = this.enemies.filter(enemy => enemy.update(this.tiles));
@@ -321,20 +326,21 @@ class Game {
             };
 
             if (this.collides(playerBounds, enemyBounds)) {
-                // 踩踏敌人
-                if (this.player.velY > 0 && playerBounds.y + playerBounds.height < enemyBounds.y + enemyBounds.height / 2 + 5) {
+                // 踩踏判断：马里奥上一帧位置在敌人上方 → 踩踏
+                const marioPrevBottom = this.player.prevY + this.player.height;
+                const enemyCenterY = enemyBounds.y + enemyBounds.height / 2;
+
+                if (marioPrevBottom <= enemyCenterY + 8) {
+                    // 踩踏成功
                     enemy.squish();
                     this.player.velY = -8;
                     this.player.score += 200;
-                }
-                // 受到伤害
-                else if (!this.player.isInvincible) {
+                } else if (!this.player.isInvincible) {
+                    // 受到伤害
                     if (this.player.isBig) {
-                        // 变大状态受伤 → 变小
                         this.player.shrink();
-                        this.player.invincibleTimer = 120; // 2秒无敌 (60fps)
+                        this.player.invincibleTimer = 120;
                     } else {
-                        // 小状态受伤 → 死亡
                         this.player.alive = false;
                         this.player.velY = -10;
                         this.state.state = this.state.DEAD;
