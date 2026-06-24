@@ -151,6 +151,19 @@ class Game {
         if (this.worldElement) {
             this.worldElement.textContent = `WORLD 1-${this.state.currentLevel}`;
         }
+        this.updatePowerDisplay();
+    }
+
+    updatePowerDisplay() {
+        const powerEl = document.getElementById('power');
+        if (powerEl) {
+            if (this.player && this.player.isBig) {
+                powerEl.textContent = '● SUPER';
+                powerEl.style.color = '#ff6b6b';
+            } else {
+                powerEl.textContent = '';
+            }
+        }
     }
 
     spawnEnemies() {
@@ -206,6 +219,7 @@ class Game {
 
         if (this.state.state === this.state.DEAD) {
             this.player.update(this.input.keys, this.tiles);
+            this.updatePowerDisplay();
             if (this.player.y > this.levelMap.length * CONFIG.TILE_SIZE + 100) {
                 this.state.state = -1;
                 this.showOverlay('GAME OVER', `Score: ${this.player.score}`);
@@ -240,6 +254,7 @@ class Game {
             this.updateCamera();
             this.scoreElement.textContent = this.player.score;
             this.coinsElement.textContent = this.player.coins;
+            this.updatePowerDisplay();
             return;
         }
 
@@ -366,6 +381,7 @@ class Game {
 
         this.scoreElement.textContent = this.player.score;
         this.coinsElement.textContent = this.player.coins;
+        this.updatePowerDisplay();
     }
 
     draw() {
