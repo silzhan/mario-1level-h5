@@ -2,6 +2,53 @@
 
 ## 开发历程
 
+### 3. World 1-3 天空运动关 + 全局体验优化
+
+#### 新增实体模块 (11 个新 .js 文件)
+- `moving-platform.js` — 水平/垂直/对角移动平台，携带玩家 `getDeltaX/Y`
+- `falling-platform.js` — 状态机 `idle → shaking(18帧) → falling → gone`
+- `springboard.js` — 踩压压缩 6 帧后弹射，`launchForce=-18`（~295px 高）
+- `paratroopa.js` — 飞行库巴，绿=垂直 sin 飞、红=水平 cos 飞；踩一次掉翅膀变普通库巴
+- `hammer-bro.js` + `Hammer` 类 — 抛物线铁锤，`setFacing(playerX)` 面向玩家
+- `koopa.js` / `piranha-plant.js` / `fireball.js` / `elevator.js` / `pipe-system.js`
+
+#### 关卡地图 (`generateLevel3Map`, 250×15)
+- 7 段式布局：入口 / 桥区 / 弹簧区 / 移动平台 / 坠落平台 / 高低路线 / 阶梯旗杆
+- 新增 tile 类型 `16=树冠` `17=桥板`，加入 `SOLID_TILES`
+- 水管两根（cols 62, 170），旗杆 col 232，城堡 cols 237-245
+- 旗杆下加 rows 12-13 砖基，让马里奥落地而非踩空
+
+#### 音频
+- `playAthletic()` 运动 BGM（bpm 180，方波旋律）
+- `spring()` 弹簧音效（锯齿波上滑 200→900Hz）
+- `die()` 死亡音阶增强（gain 0.35，时长 0.25s × 5 音）
+- 所有死亡路径统一 `music.stop(); music.die()` — 锤子/敌人/食人花/掉坑/超时
+- 掉坑死亡原代码只设 `alive=false` 不调 `die()`，已修复
+
+#### 游戏性修复
+- **固定时间步长循环**：60Hz 物理累加器 + 40fps 渲染采样，解决插电/电池速度差异
+- **旗杆烟花**：保留 `FLAGPOLE` 状态，180 帧倒计时，每 30 帧生成一组粒子；完成后 `nextLevel()`
+- **PLAY AGAIN 按钮**：只在 GAME OVER / YOU WIN 显示，关卡过渡隐藏
+- **水管居中**：`entryCol * TILE_SIZE + TILE_SIZE - player.width / 2`
+
+#### 暂停系统 (P 键)
+- `Game.paused` + `togglePause()`
+- `gameLoop` 暂停时不累加 accumulator，恢复时不会物理爆炸
+- `Music.pause()` / `resume()` 通过 `AudioContext.suspend/resume` 实现
+- 记录 `currentTrack` + `loopScheduledAt` + `loopDuration`，恢复时重排循环定时器
+
+#### 死亡动画 (FC 风格)
+- `renderer.drawMario` 开头 `!player.alive` 分支：双臂高举、双腿分开、正面朝前
+- `mario.update` 已含 `GRAVITY * 0.6` 减速下落
+- 死亡造型在 `draw` 时 `return`，绕开 jump/idle/walk 精灵选择
+
+#### 踩坑记录
+- **`playerBounds` 用前未声明**：锤子碰撞循环用了 `const playerBounds`，但声明在下方更晚位置。JS `const` 暂时性死区（TDZ）→ 游戏循环抛错卡死，画面"消失"。把声明挪到 `enemies.filter` 之前修复。
+- **飞行库巴翅膀判定**：`enemy.state === 'idle'` 不存在，弹簧板用 `!sb.compressed`。
+- **`drawFireball` 头被误删**：整块替换时 `new_string` 漏了方法签名，需二次 edit 补回。
+
+---
+
 ### 1. 第二关开发 (`feature/level-2`)
 
 #### 关卡系统
@@ -210,6 +257,8 @@ if (this.player.invincibleTimer > 0) {
 | 13 | 天花板 |
 | 14 | 隐藏砖块（顶后显现） |
 | 15 | 多金币砖块（可多次顶出金币） |
+| 16 | 树冠（Level 3 天空主题平台） |
+| 17 | 桥板（Level 3 木桥） |
 
 ### Mario 状态
 - `isBig`: 是否变大
@@ -228,8 +277,14 @@ if (this.player.invincibleTimer > 0) {
 2. 地图瓦片
 3. 金币
 4. 蘑菇/道具（1UP、火焰花、星星）
-5. 敌人（Goomba、Koopa）
-6. 升降平台
-7. 食人花
-8. 火球
-9. 马里奥
+5. 敌人（Goomba、Koopa、Paratroopa、HammerBro）
+6. 锤子（HammerBro 投掷）
+7. 升降平台
+8. 移动平台（Moving Platform）
+9. 掉落平台（Falling Platform）
+10. 弹簧板（Springboard）
+11. 食人花
+12. 火球
+13. 马里奥
+14. 烟花粒子效果
+15. 暂停覆盖层（半透明遮罩 + PAUSED 文字）
