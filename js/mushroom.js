@@ -1,17 +1,19 @@
 class Mushroom {
-    constructor(x, y) {
+    constructor(x, y, type) {
+        this.type = type || 'super';
         this.x = x + 2;
-        this.y = y;                          // 从砖块内部开始
-        this.targetY = y - CONFIG.TILE_SIZE; // 目标位置（砖块上方）
+        this.y = y;
+        this.targetY = y - CONFIG.TILE_SIZE;
         this.width = 28;
         this.height = 28;
-        this.velX = 1.5;
+        this.velX = (this.type === 'star') ? 2.5 : 1.5;
         this.velY = 0;
         this.alive = true;
         this.emerging = true;
         this.emergeProgress = 0;
         this.emergeSpeed = 0.5;
         this.onGround = false;
+        this.starBounce = (this.type === 'star');
     }
 
     update(tiles) {
@@ -48,6 +50,10 @@ class Mushroom {
                     this.y = tile.y - this.height;
                     this.velY = 0;
                     this.onGround = true;
+                    if (this.starBounce) {
+                        this.velY = -8;
+                        this.onGround = false;
+                    }
                 }
             }
 
@@ -76,7 +82,7 @@ class Mushroom {
     }
 
     isSolid(tileType) {
-        return [1, 2, 3, 4, 5, 6, 7, 8].includes(tileType);
+        return isSolidTile(tileType);
     }
 
     collides(a, b) {

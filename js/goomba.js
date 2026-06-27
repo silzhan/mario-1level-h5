@@ -66,7 +66,7 @@ class Goomba {
     }
 
     isSolid(tileType) {
-        return [1, 2, 3, 4, 5, 6, 7, 8, 10].includes(tileType);
+        return isSolidTile(tileType);
     }
 
     getBounds() {

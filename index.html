@@ -27,6 +27,11 @@
                     <span class="level-name">WORLD 1-2</span>
                     <span class="level-desc"> underground</span>
                 </button>
+                <button class="level-btn" data-level="3">
+                    <span class="level-icon">☁️</span>
+                    <span class="level-name">WORLD 1-3</span>
+                    <span class="level-desc"> sky athletic</span>
+                </button>
             </div>
             <div class="title-hint">Select a level or press ENTER</div>
         </div>
@@ -35,24 +40,28 @@
             <div>SCORE: <span id="score">0</span></div>
             <div>COINS: <span id="coins">0</span></div>
             <div id="world">WORLD 1-1</div>
+            <div>TIME: <span id="time">400</span></div>
+            <div>LIVES: <span id="lives">3</span></div>
             <div id="power"></div>
         </div>
         <div id="overlay">
             <div id="overlayText">LEVEL CLEAR!</div>
             <div id="subText" style="font-size: 24px; margin-top: 10px;"></div>
-            <button onclick="game.resetToLevel1()">PLAY AGAIN</button>
+            <button id="playAgainBtn" onclick="game.playAgain()" style="display:none">PLAY AGAIN</button>
         </div>
     </div>
 
     <div id="controls">
         <div>
             <span class="key">&larr;</span> <span class="key">&rarr;</span> or <span class="key">A</span> <span class="key">D</span> - Move
+            &nbsp;|&nbsp; <span class="key">&darr;</span> or <span class="key">S</span> - Duck
         </div>
         <div>
             <span class="key">SPACE</span> or <span class="key">&uarr;</span> or <span class="key">W</span> - Jump
+            &nbsp;|&nbsp; <span class="key">SHIFT</span> or <span class="key">X</span> - Fireball
         </div>
         <div>
-            <span class="key">R</span> - Restart | <span class="key">ESC</span> - Quit
+            <span class="key">R</span> - Restart | <span class="key">M</span> - Mute | <span class="key">P</span> - Pause | <span class="key">ESC</span> - Quit
         </div>
     </div>
 
@@ -60,11 +69,22 @@
     <script src="js/game-state.js"></script>
     <script src="js/mario.js"></script>
     <script src="js/goomba.js"></script>
+    <script src="js/koopa.js"></script>
     <script src="js/coin.js"></script>
     <script src="js/mushroom.js"></script>
     <script src="js/level.js"></script>
     <script src="js/renderer.js"></script>
     <script src="js/input.js"></script>
+    <script src="js/music.js"></script>
+    <script src="js/elevator.js"></script>
+    <script src="js/piranha-plant.js"></script>
+    <script src="js/pipe-system.js"></script>
+    <script src="js/fireball.js"></script>
+    <script src="js/moving-platform.js"></script>
+    <script src="js/falling-platform.js"></script>
+    <script src="js/springboard.js"></script>
+    <script src="js/paratroopa.js"></script>
+    <script src="js/hammer-bro.js"></script>
     <script src="js/game.js"></script>
 </body>
 </html>

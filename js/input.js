@@ -3,7 +3,9 @@ class InputHandler {
         this.keys = {
             left: false,
             right: false,
-            jump: false
+            jump: false,
+            down: false,
+            run: false
         };
         this._canvas = canvas;
         this._player = null;
@@ -33,12 +35,26 @@ class InputHandler {
                 this.keys.jump = true;
                 e.preventDefault();
             }
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                this.keys.down = true;
+                e.preventDefault();
+            }
+            if (e.key === 'Shift' || e.key === 'x' || e.key === 'X') {
+                this.keys.run = true;
+                e.preventDefault();
+            }
             if (e.key === 'r' || e.key === 'R') {
                 if (this._onReset) this._onReset();
                 e.preventDefault();
             }
             if (e.key === 'Escape') {
                 window.close();
+                e.preventDefault();
+            }
+            if (e.key === 'm' || e.key === 'M') {
+                if (window.music && music.gainNode) {
+                    music.gainNode.gain.value = music.gainNode.gain.value > 0 ? 0 : 0.3;
+                }
                 e.preventDefault();
             }
         });
@@ -56,6 +72,12 @@ class InputHandler {
                     this._player.jumpWasPressed = false;
                     this._player.jumpKeyReleased = true;
                 }
+            }
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                this.keys.down = false;
+            }
+            if (e.key === 'Shift' || e.key === 'x' || e.key === 'X') {
+                this.keys.run = false;
             }
         });
 

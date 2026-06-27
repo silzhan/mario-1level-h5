@@ -13,8 +13,13 @@ class Mario {
         this.score = 0;
         this.coins = 0;
         this.isBig = false;
+        this.isDucking = false;
         this.isInvincible = false;
         this.invincibleTimer = 0;
+        this.isFire = false;
+        this.isStar = false;
+        this.starTimer = 0;
+        this.fireballCooldown = 0;
         this.prevY = y;  // 上一帧Y位置（用于踩踏判断）
         this.jumpWasPressed = false;
         this.wasOnGround = true;
@@ -26,9 +31,9 @@ class Mario {
     becomeBig() {
         if (this.isBig) return;
         this.isBig = true;
-        this.height = 56;
-        // 调整位置避免卡进地面
-        this.y -= CONFIG.TILE_SIZE;
+        this.prevHeight = this.height; // 保存旧高度
+        this.y -= 15; // 上移 15px，脚保持在地面
+        this.height = 45;
         this.isInvincible = true;
         this.invincibleTimer = 60;
     }
@@ -36,11 +41,24 @@ class Mario {
     shrink() {
         if (!this.isBig) return;
         this.isBig = false;
+        this.isDucking = false;
+        this.isFire = false;
         this.height = 30;
-        // 调整位置
-        this.y += CONFIG.TILE_SIZE;
+        this.y += 15;
         this.isInvincible = true;
-        this.invincibleTimer = 120; // 2秒无敌闪烁
+        this.invincibleTimer = 120;
+    }
+
+    becomeFire() {
+        if (!this.isBig) {
+            this.becomeBig();
+        }
+        this.isFire = true;
+    }
+
+    becomeStar() {
+        this.isStar = true;
+        this.starTimer = 600;
     }
 
     update(keys, tiles) {
@@ -52,16 +70,45 @@ class Mario {
         }
 
         this.hitTile = null;
+        this.prevY = this.y;
+        this.prevHeight = this.height;
+
+        if (this.isStar) {
+            this.starTimer--;
+            if (this.starTimer <= 0) {
+                this.isStar = false;
+            }
+        }
+
+        if (this.fireballCooldown > 0) this.fireballCooldown--;
 
         if (!keys.jump && this.jumpWasPressed) {
             this.jumpWasPressed = false;
+            if (this.velY < -4) {
+                this.velY = -4;
+            }
         }
 
-        if (keys.left) {
-            this.velX = -CONFIG.PLAYER_SPEED;
+        // Ducking (big Mario only)
+        if (keys.down && this.onGround && this.isBig && !this.isDucking) {
+            this.isDucking = true;
+            this.height = 30;
+            this.y += 15;
+        } else if (this.isDucking && (!keys.down || !this.onGround)) {
+            this.isDucking = false;
+            this.height = 45;
+            this.y -= 15;
+        }
+
+        if (this.isDucking) {
+            this.velX = 0;
+        } else if (keys.left) {
+            const speed = keys.run ? CONFIG.RUN_SPEED : CONFIG.PLAYER_SPEED;
+            this.velX = -speed;
             this.facingRight = false;
         } else if (keys.right) {
-            this.velX = CONFIG.PLAYER_SPEED;
+            const speed = keys.run ? CONFIG.RUN_SPEED : CONFIG.PLAYER_SPEED;
+            this.velX = speed;
             this.facingRight = true;
         } else {
             this.velX *= CONFIG.FRICTION;
@@ -74,6 +121,7 @@ class Mario {
             this.velY = CONFIG.JUMP_FORCE;
             this.onGround = false;
             this.jumpWasPressed = true;
+            if (window.music) music.jump();
         }
 
         if (!justPressed) {
@@ -170,7 +218,7 @@ class Mario {
                         this.y = tile.y + tile.height;
                     }
                     this.velY = 0;
-                    if (tile.type === 3) {
+                    if (tile.type === 3 || tile.type === 2 || tile.type === 14 || tile.type === 15) {
                         this.hitTile = tile;
                     }
                 }
@@ -179,7 +227,7 @@ class Mario {
     }
 
     isSolid(tileType) {
-        return [1, 2, 3, 4, 5, 6, 7, 8, 10].includes(tileType);
+        return isSolidTile(tileType);
     }
 
     collides(a, b) {
