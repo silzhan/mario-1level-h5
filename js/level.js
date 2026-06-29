@@ -1,4 +1,7 @@
 function generateLevelMap(level = 1) {
+    if (level === 4) {
+        return generateLevel4Map();
+    }
     if (level === 3) {
         return generateLevel3Map();
     }
@@ -392,6 +395,179 @@ function generateLevel3Map() {
     for (let c = 229; c <= 235; c++) {
         for (let r = 12; r < 14; r++) level[r][c] = B;
     }
+
+    return level;
+}
+
+// Level 4: Castle — enclosed corridors, lava pits, fire bars, Bowser boss room
+function generateLevel4Map() {
+    const W = 195;
+    const H = 15;
+    const level = Array(H).fill(null).map(() => Array(W).fill(0));
+    const CB = 19;  // castle brick
+    const UB = 20;  // unbreakable brick
+    const LV = 18;  // lava
+    const BR = 21;  // bridge
+    const AX = 22;  // axe
+    const Q = 3;    // question block
+    const BK = 2;   // breakable brick
+    const HIDE = 14;// hidden block
+
+    const fill = (r1, c1, r2, c2, type) => {
+        for (let r = r1; r <= r2; r++)
+            for (let c = c1; c <= c2; c++)
+                if (r >= 0 && r < H && c >= 0 && c < W) level[r][c] = type;
+    };
+
+    // === CEILING (rows 0-1) — full castle brick ===
+    fill(0, 0, 1, W - 1, CB);
+
+    // === FLOOR (rows 12-14) — full castle brick ===
+    fill(12, 0, 14, W - 1, CB);
+
+    // === LAVA PIT HELPER ===
+    const lavaPit = (startCol, endCol) => {
+        for (let c = startCol; c <= endCol; c++) {
+            level[12][c] = 0;
+            level[13][c] = LV;
+            level[14][c] = LV;
+        }
+    };
+
+    // === STAIR HELPER (ascending right) ===
+    const stairsRight = (startCol, steps) => {
+        for (let s = 0; s < steps; s++) {
+            for (let r = 11 - s; r < 12; r++) {
+                if (r >= 0) level[r][startCol + s] = CB;
+            }
+        }
+    };
+
+    // === STAIR HELPER (descending right) ===
+    const stairsDown = (startCol, steps) => {
+        for (let s = 0; s < steps; s++) {
+            for (let r = 12 - steps + s; r < 12; r++) {
+                if (r >= 0) level[r][startCol + s] = CB;
+            }
+        }
+    };
+
+    // =====================================================
+    // SECTION 1: Entrance corridor (cols 0-22)
+    // Standard height, teaches castle theme
+    // =====================================================
+    level[4][8] = Q;
+    level[4][12] = Q;
+    level[4][16] = Q;
+    fill(9, 10, 9, 14, CB);
+    level[9][12] = Q;
+
+    // =====================================================
+    // SECTION 2: First lava pit zone (cols 23-45)
+    // =====================================================
+    lavaPit(26, 28);
+    fill(10, 27, 10, 27, CB);
+    lavaPit(34, 36);
+    stairsRight(30, 3);
+    fill(10, 35, 10, 35, CB);
+    level[9][38] = Q;
+    fill(9, 40, 9, 42, CB);
+    level[9][41] = Q;
+
+    // =====================================================
+    // SECTION 3: Narrow corridor (cols 46-65)
+    // =====================================================
+    fill(2, 46, 4, 65, CB);
+    level[9][48] = Q;
+    fill(9, 50, 9, 53, CB);
+    level[9][51] = BK; level[9][52] = BK;
+    lavaPit(57, 59);
+    fill(10, 58, 10, 58, CB);
+    level[9][61] = Q;
+    fill(9, 63, 9, 64, CB);
+
+    // =====================================================
+    // SECTION 4: Multi-level with stairs (cols 66-90)
+    // =====================================================
+    fill(2, 66, 4, 65, 0);
+    stairsRight(68, 4);
+    fill(7, 72, 7, 78, CB);
+    level[7][74] = Q; level[7][76] = Q;
+    level[4][75] = HIDE;
+    stairsDown(80, 4);
+    fill(9, 72, 9, 78, UB);
+    lavaPit(82, 84);
+    fill(10, 83, 10, 83, CB);
+    level[9][86] = Q;
+    fill(9, 88, 9, 89, CB);
+
+    // =====================================================
+    // SECTION 5: Fire bar gauntlet (cols 91-115)
+    // =====================================================
+    fill(2, 91, 4, 115, CB);
+    lavaPit(95, 97);
+    lavaPit(105, 107);
+    lavaPit(112, 114);
+    fill(10, 96, 10, 96, CB);
+    fill(10, 106, 10, 106, CB);
+    level[9][93] = Q;
+    fill(9, 99, 9, 101, CB);
+    level[9][100] = Q;
+    level[9][103] = BK; level[9][104] = BK;
+    level[9][109] = Q;
+    fill(9, 110, 9, 111, CB);
+
+    // =====================================================
+    // SECTION 6: Pre-boss corridor (cols 116-145)
+    // =====================================================
+    fill(2, 116, 4, 115, 0);
+    stairsRight(118, 5);
+    fill(6, 123, 6, 128, CB);
+    level[6][125] = Q; level[6][127] = Q;
+    stairsDown(129, 5);
+    lavaPit(135, 137);
+    fill(10, 136, 10, 136, CB);
+    level[9][139] = Q;
+    fill(9, 141, 9, 143, CB);
+    level[9][142] = Q;
+    level[4][143] = HIDE;
+
+    // =====================================================
+    // SECTION 7: Boss room (cols 146-194)
+    // =====================================================
+    for (let r = 2; r <= 11; r++) {
+        for (let c = 148; c <= 194; c++) {
+            level[r][c] = 0;
+        }
+    }
+    fill(12, 148, 14, 194, CB);
+    fill(0, 148, 1, 194, CB);
+    for (let c = 155; c <= 185; c++) {
+        level[12][c] = LV;
+        level[13][c] = LV;
+        level[14][c] = LV;
+    }
+    fill(11, 155, 11, 183, BR);
+    fill(11, 148, 11, 154, CB);
+    fill(11, 184, 11, 194, CB);
+    level[10][190] = AX;
+    fill(2, 148, 11, 149, CB);
+    fill(2, 193, 11, 194, CB);
+
+    // === PIPES ===
+    const TORCH = 23;
+    const pipe = (topRow, col) => {
+        level[topRow][col] = 4; level[topRow][col + 1] = 5;
+        for (let r = topRow + 1; r < 12; r++) {
+            level[r][col] = 6; level[r][col + 1] = 7;
+        }
+    };
+    pipe(10, 22);   // Section 1 end (decorative)
+    pipe(10, 140);  // Section 6 pre-boss → enters boss room
+
+    // === TORCHES along walls ===
+    [4, 18, 30, 44, 70, 85, 120, 138].forEach(c => { level[4][c] = TORCH; });
+    [50, 60, 95, 110].forEach(c => { level[5][c] = TORCH; });
 
     return level;
 }

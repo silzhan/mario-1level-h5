@@ -8,7 +8,7 @@ class GameState {
         this.state = this.PLAYING;
 
         this.currentLevel = 1;
-        this.totalLevels = 3;
+        this.totalLevels = 4;
         this.levelScore = 0;
     }
 }

@@ -66,6 +66,10 @@ class Game {
                     this.selectedLevel = 3;
                     this.updateTitleWorld();
                     this.startGame();
+                } else if (e.key === '4') {
+                    this.selectedLevel = 4;
+                    this.updateTitleWorld();
+                    this.startGame();
                 }
             }
 
@@ -96,6 +100,8 @@ class Game {
                 music.playUnderground();
             } else if (this.state.currentLevel === 3 && typeof music.playAthletic === 'function') {
                 music.playAthletic();
+            } else if (this.state.currentLevel === 4 && typeof music.playCastle === 'function') {
+                music.playCastle();
             } else {
                 music.playOverworld();
             }
@@ -129,13 +135,39 @@ class Game {
         this.movingPlatforms = [];
         this.fallingPlatforms = [];
         this.springboards = [];
+        this.podoboos = [];
+        this.fireBars = [];
+        this.bowser = null;
+        this.bossRoom = false;
+        this.bossTriggered = false;
+        this.bridgeTiles = [];
+        this.bridgeCollapsed = false;
+        this.bridgeCollapseIndex = 0;
+        this.bridgeCollapseTimer = 0;
+        this.princessMessage = false;
+        this.princessTimer = 0;
+        this.victorySequence = false;
+        this.scorePopups = [];
 
         this.buildLevel();
+        // Safety: ensure player doesn't spawn inside a solid tile
+        if (this.state.currentLevel === 4) {
+            const T = CONFIG.TILE_SIZE;
+            const spawnCol = 3;
+            for (let r = 11; r >= 0; r--) {
+                if (this.levelMap[r] && !isSolidTile(this.levelMap[r][spawnCol])) {
+                    this.player.y = r * T;
+                    break;
+                }
+            }
+        }
         this.pipeSystem.setup(this.state.currentLevel);
         this.setupElevators();
         this.setupMovingPlatforms();
         this.setupFallingPlatforms();
         this.setupSpringboards();
+        this.setupPodoboos();
+        this.setupFireBars();
         this.spawnEnemies();
         this.spawnPiranhaPlants();
         this.spawnCoins();
@@ -168,6 +200,8 @@ class Game {
                     music.playUnderground();
                 } else if (this.state.currentLevel === 3 && typeof music.playAthletic === 'function') {
                     music.playAthletic();
+                } else if (this.state.currentLevel === 4 && typeof music.playCastle === 'function') {
+                    music.playCastle();
                 } else {
                     music.playOverworld();
                 }
@@ -184,6 +218,8 @@ class Game {
                 music.playUnderground();
             } else if (this.state.currentLevel === 3 && typeof music.playAthletic === 'function') {
                 music.playAthletic();
+            } else if (this.state.currentLevel === 4 && typeof music.playCastle === 'function') {
+                music.playCastle();
             } else {
                 music.playOverworld();
             }
@@ -305,6 +341,26 @@ class Game {
             this.enemies.push(new Paratroopa(208 * T, 3 * T, 'red', 'horizontal'));
             this.enemies.push(new HammerBro(151 * T, 7 * T));
             this.enemies.push(new HammerBro(176 * T, 9 * T));
+        } else if (level === 4) {
+            const T = CONFIG.TILE_SIZE;
+            // Goombas — fewer than other levels, difficulty from hazards
+            [15, 20, 32, 42, 52, 62, 74, 88, 100, 111, 126, 140].forEach(col => {
+                this.enemies.push(new Goomba(col * T, 11 * T));
+            });
+            // Green Koopas
+            [25, 55, 86, 120].forEach(col => {
+                this.enemies.push(new Koopa(col * T, 10 * T, 'green'));
+            });
+            // Red Koopas (on platforms)
+            [40, 75, 130].forEach(col => {
+                this.enemies.push(new Koopa(col * T, 10 * T, 'red'));
+            });
+            // Paratroopa in narrow section
+            this.enemies.push(new Paratroopa(60 * T, 6 * T, 'green', 'vertical'));
+            this.enemies.push(new Paratroopa(110 * T, 5 * T, 'red', 'horizontal'));
+            // Hammer Bros on upper path
+            this.enemies.push(new HammerBro(73 * T, 6 * T));
+            this.enemies.push(new HammerBro(125 * T, 5 * T));
         }
     }
 
@@ -369,6 +425,21 @@ class Game {
             coinPositions.forEach(([r, c]) => {
                 this.coins.push(new Coin(c * T + 8, r * T + 4, false));
             });
+        } else if (level === 4) {
+            const coinPositions = [
+                [8, 10], [8, 11], [8, 12],
+                [8, 38], [8, 39], [8, 40],
+                [8, 48], [8, 49],
+                [6, 73], [6, 74], [6, 75],
+                [8, 86], [8, 87],
+                [8, 99], [8, 100], [8, 101],
+                [8, 109], [8, 110],
+                [8, 125], [8, 126], [8, 127],
+                [8, 139], [8, 140], [8, 141]
+            ];
+            coinPositions.forEach(([r, c]) => {
+                this.coins.push(new Coin(c * T + 8, r * T + 4, false));
+            });
         }
     }
 
@@ -410,6 +481,25 @@ class Game {
         this.springboards.push(new Springboard(200 * T, 11 * T, -18));
     }
 
+    setupPodoboos() {
+        if (this.state.currentLevel !== 4) return;
+        const T = CONFIG.TILE_SIZE;
+        // Podoboos at lava pit positions (lava surface is row 12 = 12*T)
+        this.podoboos.push(new Podoboo(27 * T, 12 * T, 12 * T - 160));
+        this.podoboos.push(new Podoboo(96 * T, 12 * T, 12 * T - 160));
+        this.podoboos.push(new Podoboo(106 * T, 12 * T, 12 * T - 160));
+    }
+
+    setupFireBars() {
+        if (this.state.currentLevel !== 4) return;
+        const T = CONFIG.TILE_SIZE;
+        // Fire bars in the gauntlet section
+        this.fireBars.push(new FireBar(58 * T + 16, 8 * T, 5, 80, 0.03, true));
+        this.fireBars.push(new FireBar(96 * T + 16, 9 * T, 4, 64, 0.04, false));
+        this.fireBars.push(new FireBar(106 * T + 16, 9 * T, 5, 80, 0.035, true));
+        this.fireBars.push(new FireBar(113 * T + 16, 9 * T, 4, 64, 0.04, false));
+    }
+
     spawnPiranhaPlants() {
         if (this.state.currentLevel === 2) {
             this.piranhaPlants.push(new PiranhaPlant(18, 9));
@@ -423,35 +513,54 @@ class Game {
         } else if (this.state.currentLevel === 3) {
             this.piranhaPlants.push(new PiranhaPlant(62, 9));
             this.piranhaPlants.push(new PiranhaPlant(170, 9));
+        } else if (this.state.currentLevel === 4) {
+            this.piranhaPlants.push(new PiranhaPlant(22, 10));
+            this.piranhaPlants.push(new PiranhaPlant(140, 10));
         }
     }
 
     getPowerUpType(row, col) {
         const level = this.state.currentLevel;
         if (level === 2) {
-            const fireBlocks = [[7, 36], [7, 67], [5, 76], [6, 140]];
-            const starBlocks = [[6, 44], [5, 77]];
-            const oneUpBlocks = [[9, 8], [9, 126]];
+            const superBlocks = [[9, 8], [9, 30], [7, 131], [10, 200]];
+            const fireBlocks = [[7, 36]];
+            const starBlocks = [[6, 44]];
+            const oneUpBlocks = [[9, 126]];
+            for (const [r, c] of superBlocks) if (row === r && col === c) return 'super';
             for (const [r, c] of fireBlocks) if (row === r && col === c) return 'fire';
             for (const [r, c] of starBlocks) if (row === r && col === c) return 'star';
             for (const [r, c] of oneUpBlocks) if (row === r && col === c) return '1up';
-            return 'super';
+            return 'coin';
         } else if (level === 1) {
+            const superBlocks = [[9, 16], [9, 21], [9, 61], [9, 112]];
             const oneUpBlocks = [[5, 22]];
-            const starBlocks = [[5, 38], [6, 97]];
+            const starBlocks = [[5, 38]];
             const fireBlocks = [[5, 55]];
+            for (const [r, c] of superBlocks) if (row === r && col === c) return 'super';
             for (const [r, c] of oneUpBlocks) if (row === r && col === c) return '1up';
             for (const [r, c] of starBlocks) if (row === r && col === c) return 'star';
             for (const [r, c] of fireBlocks) if (row === r && col === c) return 'fire';
-            return 'super';
+            return 'coin';
+        } else if (level === 4) {
+            const superBlocks = [[9, 38], [9, 61], [9, 86], [9, 139]];
+            const oneUpBlocks = [[4, 75]];
+            const starBlocks = [[4, 143]];
+            const fireBlocks = [[9, 100]];
+            for (const [r, c] of superBlocks) if (row === r && col === c) return 'super';
+            for (const [r, c] of oneUpBlocks) if (row === r && col === c) return '1up';
+            for (const [r, c] of starBlocks) if (row === r && col === c) return 'star';
+            for (const [r, c] of fireBlocks) if (row === r && col === c) return 'fire';
+            return 'coin';
         } else {
-            const oneUpBlocks = [[10, 68], [7, 190]];
-            const starBlocks = [[9, 151], [5, 206]];
-            const fireBlocks = [[7, 90], [9, 161]];
+            const superBlocks = [[9, 36], [9, 56], [9, 81], [7, 190]];
+            const oneUpBlocks = [[10, 68]];
+            const starBlocks = [[5, 206]];
+            const fireBlocks = [[7, 90]];
+            for (const [r, c] of superBlocks) if (row === r && col === c) return 'super';
             for (const [r, c] of oneUpBlocks) if (row === r && col === c) return '1up';
             for (const [r, c] of starBlocks) if (row === r && col === c) return 'star';
             for (const [r, c] of fireBlocks) if (row === r && col === c) return 'fire';
-            return 'super';
+            return 'coin';
         }
     }
 
@@ -460,6 +569,10 @@ class Game {
                a.x + a.width > b.x &&
                a.y < b.y + b.height &&
                a.y + a.height > b.y;
+    }
+
+    spawnScorePopup(x, y, score) {
+        this.scorePopups.push({ x, y: y - 24, text: '+' + score, life: 0, maxLife: 45 });
     }
 
     updateCamera() {
@@ -616,6 +729,204 @@ class Game {
             }
         }
 
+        // === CASTLE LEVEL MECHANICS ===
+        const playerBounds = this.player.getBounds();
+        if (this.state.currentLevel === 4) {
+            // Boss room detection
+            if (!this.bossTriggered && this.player.x >= 148 * CONFIG.TILE_SIZE) {
+                this.bossTriggered = true;
+                this.bossRoom = true;
+                // Spawn Bowser
+                this.bowser = new Bowser(175 * CONFIG.TILE_SIZE, 9 * CONFIG.TILE_SIZE);
+                this.bowser.setBridgeRange(155 * CONFIG.TILE_SIZE, 183 * CONFIG.TILE_SIZE);
+                // Switch to boss music
+                if (window.music && typeof music.playBoss === 'function') {
+                    music.stop();
+                    music.playBoss();
+                }
+            }
+
+            // Update podoboos
+            for (const pod of this.podoboos) {
+                pod.update();
+            }
+
+            // Update fire bars
+            for (const fb of this.fireBars) {
+                fb.update();
+            }
+
+            // Update bowser
+            if (this.bowser && this.bowser.alive) {
+                this.bowser.update(this.tiles);
+            }
+
+            // Podoboo collision with player
+            for (const pod of this.podoboos) {
+                if (!pod.alive || pod.state === 'waiting') continue;
+                const pb = pod.getBounds();
+                if (this.collides(playerBounds, pb)) {
+                    if (this.player.isStar) {
+                        // Star kills podoboo (it just sinks back)
+                        pod.state = 'sinking';
+                        pod.sinkTimer = 10;
+                    } else if (!this.player.isInvincible) {
+                        this.player.alive = false;
+                        this.player.velY = -10;
+                        this.state.state = this.state.DEAD;
+                        if (window.music) { music.stop(); music.die(); }
+                    }
+                }
+            }
+
+            // Fire bar collision with player
+            for (const fb of this.fireBars) {
+                for (let i = 0; i < fb.numBalls; i++) {
+                    const ballBounds = fb.getBallBounds(i);
+                    if (this.collides(playerBounds, ballBounds)) {
+                        if (this.player.isStar) {
+                            // Star protects
+                        } else if (!this.player.isInvincible) {
+                            if (this.player.isBig) {
+                                this.player.shrink();
+                                this.player.invincibleTimer = 120;
+                                if (window.music) music.hurt();
+                            } else {
+                                this.player.alive = false;
+                                this.player.velY = -10;
+                                this.state.state = this.state.DEAD;
+                                if (window.music) { music.stop(); music.die(); }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bowser collision with player
+            if (this.bowser && this.bowser.alive && !this.bowser.falling) {
+                const bowserBounds = this.bowser.getBounds();
+                if (this.collides(playerBounds, bowserBounds)) {
+                    if (this.player.isStar) {
+                        // Star damages bowser (but he's fake, just pushes him)
+                        this.bowser.velX = this.bowser.facingRight ? -3 : 3;
+                    } else if (!this.player.isInvincible) {
+                        if (this.player.isBig) {
+                            this.player.shrink();
+                            this.player.invincibleTimer = 120;
+                            if (window.music) music.hurt();
+                        } else {
+                            this.player.alive = false;
+                            this.player.velY = -10;
+                            this.state.state = this.state.DEAD;
+                            if (window.music) { music.stop(); music.die(); }
+                        }
+                    }
+                }
+
+                // Bowser fireball collision
+                for (const fb of this.bowser.fireballs) {
+                    if (!fb.alive) continue;
+                    if (this.collides(playerBounds, fb.getBounds())) {
+                        if (this.player.isStar) {
+                            fb.alive = false;
+                        } else if (!this.player.isInvincible) {
+                            if (this.player.isBig) {
+                                this.player.shrink();
+                                this.player.invincibleTimer = 120;
+                                if (window.music) music.hurt();
+                            } else {
+                                this.player.alive = false;
+                                this.player.velY = -10;
+                                this.state.state = this.state.DEAD;
+                                if (window.music) { music.stop(); music.die(); }
+                            }
+                            fb.alive = false;
+                        }
+                    }
+                }
+            }
+
+            // Fireball (player's) vs Bowser — no effect (fake Bowser)
+
+            // Axe collision — trigger bridge collapse
+            if (!this.bridgeCollapsed && this.player.x >= 190 * CONFIG.TILE_SIZE - 8) {
+                this.bridgeCollapsed = true;
+                this.bridgeCollapseIndex = 0;
+                this.bridgeCollapseTimer = 0;
+                this.player.isInvincible = true;
+                this.player.invincibleTimer = 180;
+                // Stop bowser
+                if (this.bowser) {
+                    this.bowser.velX = 0;
+                }
+                // Remove axe tile
+                this.levelMap[10][190] = 0;
+                // Remove the tile from tiles array
+                this.tiles = this.tiles.filter(t => !(t.type === 22 && Math.floor(t.x / CONFIG.TILE_SIZE) === 190));
+                if (window.music) {
+                    music.stop();
+                    music.axeGrab();
+                    setTimeout(() => { if (window.music) music.bridgeBreak(); }, 200);
+                }
+            }
+
+            // Bridge collapse animation
+            if (this.bridgeCollapsed && !this.princessMessage) {
+                this.bridgeCollapseTimer++;
+                if (this.bridgeCollapseTimer % 3 === 0 && this.bridgeCollapseIndex < 29) {
+                    const col = 183 - this.bridgeCollapseIndex;
+                    if (col >= 155) {
+                        this.levelMap[11][col] = 0;
+                        this.tiles = this.tiles.filter(t => !(t.type === 21 && Math.floor(t.x / CONFIG.TILE_SIZE) === col));
+                        this.bridgeCollapseIndex++;
+                    }
+                }
+                // Bowser falls after bridge collapses enough
+                if (this.bowser && this.bowser.alive && !this.bowser.falling && this.bridgeCollapseIndex > 10) {
+                    this.bowser.startFalling();
+                    if (window.music) music.bowserFall();
+                }
+                // Bowser gone → victory
+                if (this.bowser && this.bowser.falling && this.bowser.y > 16 * CONFIG.TILE_SIZE) {
+                    this.bowser.alive = false;
+                    this.princessMessage = true;
+                    this.princessTimer = 0;
+                    this.player.velX = 0;
+                    this.player.x = 188 * CONFIG.TILE_SIZE;
+                    this.player.facingRight = true;
+                    if (window.music) music.levelClear();
+                }
+            }
+
+            // "Princess in another castle" message
+            if (this.princessMessage) {
+                this.princessTimer++;
+                this.player.velX = 0;
+                if (this.princessTimer > 300) { // 5 seconds
+                    this.showOverlay(
+                        'THANK YOU MARIO!',
+                        'But our princess is in another castle!',
+                        true
+                    );
+                    this.state.state = this.state.WIN;
+                }
+            }
+
+            // Lava death check — instant death for level 4
+            const playerCol = Math.floor((this.player.x + this.player.width / 2) / CONFIG.TILE_SIZE);
+            const playerRow = Math.floor((this.player.y + this.player.height) / CONFIG.TILE_SIZE);
+            if (playerRow >= 0 && playerRow < this.levelMap.length &&
+                playerCol >= 0 && playerCol < this.levelMap[0].length) {
+                const tileBelow = this.levelMap[playerRow] ? this.levelMap[playerRow][playerCol] : 0;
+                if (isLavaTile(tileBelow) && this.state.state === this.state.PLAYING) {
+                    this.player.alive = false;
+                    this.player.velY = -10;
+                    this.state.state = this.state.DEAD;
+                    if (window.music) { music.stop(); music.die(); }
+                }
+            }
+        }
+
         // 无敌时间递减
         if (this.player.invincibleTimer > 0) {
             this.player.invincibleTimer--;
@@ -637,9 +948,20 @@ class Game {
                     tile.type = 0;
                     this.levelMap[row][col] = 0;
                     this.player.score += 50;
+                    this.spawnScorePopup(tile.x + CONFIG.TILE_SIZE / 2, tile.y, 50);
                     if (window.music) music.coin();
                 }
                 // Small Mario: just bounce, no effect
+            }
+            // Type 19: castle brick — breakable by big Mario
+            else if (originalType === 19) {
+                if (this.player.isBig) {
+                    tile.type = 0;
+                    this.levelMap[row][col] = 0;
+                    this.player.score += 50;
+                    this.spawnScorePopup(tile.x + CONFIG.TILE_SIZE / 2, tile.y, 50);
+                    if (window.music) music.coin();
+                }
             }
             // Type 14: hidden block - reveal on first hit
             else if (originalType === 14) {
@@ -649,9 +971,10 @@ class Game {
                 this.coins.push(new Coin(tile.x + 4, tile.y - 30, true));
                 this.player.coins++;
                 this.player.score += 200;
+                this.spawnScorePopup(tile.x + CONFIG.TILE_SIZE / 2, tile.y, 200);
                 if (window.music) music.coin();
                 const powerType = this.getPowerUpType(row, col);
-                if (powerType) {
+                if (powerType && powerType !== 'coin') {
                     this.mushrooms.push(new Mushroom(tile.x, tile.y, powerType));
                 }
             }
@@ -662,6 +985,7 @@ class Game {
                 this.coins.push(new Coin(tile.x + 4, tile.y - 30, true));
                 this.player.coins++;
                 this.player.score += 200;
+                this.spawnScorePopup(tile.x + CONFIG.TILE_SIZE / 2, tile.y, 200);
                 if (window.music) music.coin();
                 if (this.multiCoinHits[key] >= 8) {
                     tile.type = 8;
@@ -675,9 +999,10 @@ class Game {
                 this.coins.push(new Coin(tile.x + 4, tile.y - 30, true));
                 this.player.coins++;
                 this.player.score += 200;
+                this.spawnScorePopup(tile.x + CONFIG.TILE_SIZE / 2, tile.y, 200);
                 if (window.music) music.coin();
                 const powerType = this.getPowerUpType(row, col);
-                if (powerType) {
+                if (powerType && powerType !== 'coin') {
                     this.mushrooms.push(new Mushroom(tile.x, tile.y, powerType));
                 }
             }
@@ -692,8 +1017,6 @@ class Game {
         }
 
         this.fireballs = this.fireballs.filter(fb => fb.update(this.tiles));
-
-        const playerBounds = this.player.getBounds();
 
         this.enemies = this.enemies.filter(enemy => {
             if (enemy.type === 'hammerbro' && enemy.setFacing) enemy.setFacing(this.player.x);
@@ -743,10 +1066,12 @@ class Game {
                     this.player.becomeFire();
                     if (window.music) music.powerup();
                     this.player.score += 1000;
+                    this.spawnScorePopup(mushroom.x, mushroom.y, 1000);
                 } else if (mushroom.type === 'star') {
                     this.player.becomeStar();
                     if (window.music) music.powerup();
                     this.player.score += 1000;
+                    this.spawnScorePopup(mushroom.x, mushroom.y, 1000);
                 } else {
                     if (!this.player.isBig) {
                         this.player.becomeBig();
@@ -755,6 +1080,7 @@ class Game {
                         if (window.music) music.coin();
                     }
                     this.player.score += 1000;
+                    this.spawnScorePopup(mushroom.x, mushroom.y, 1000);
                 }
             }
         });
@@ -764,6 +1090,7 @@ class Game {
                 coin.collected = true;
                 this.player.coins++;
                 this.player.score += 100;
+                this.spawnScorePopup(coin.x, coin.y, 100);
                 if (window.music) music.coin();
             }
         });
@@ -796,6 +1123,7 @@ class Game {
                         }
                         this.player.velY = -8;
                         this.player.score += 200;
+                        this.spawnScorePopup(enemy.x, enemy.y, 200);
                         if (window.music) music.coin();
                     } else if (enemy.shellMoving && !this.player.isInvincible && !this.player.isStar) {
                         if (this.player.isBig) {
@@ -816,6 +1144,7 @@ class Game {
                     const result = enemy.squish();
                     this.player.velY = -8;
                     this.player.score += 200;
+                    this.spawnScorePopup(enemy.x, enemy.y, 200);
                     if (window.music) music.coin();
                 } else if (!this.player.isInvincible && !this.player.isStar) {
                     if (this.player.isBig) {
@@ -843,6 +1172,7 @@ class Game {
                 if (this.collides(shellBounds, otherBounds)) {
                     other.alive = false;
                     this.player.score += 200;
+                    this.spawnScorePopup(other.x, other.y, 200);
                 }
             });
         });
@@ -864,6 +1194,7 @@ class Game {
                     enemy.alive = false;
                     fb.alive = false;
                     this.player.score += 200;
+                    this.spawnScorePopup(enemy.x, enemy.y, 200);
                 }
             });
         });
@@ -876,6 +1207,7 @@ class Game {
                 if (this.collides(playerBounds, enemyBounds)) {
                     enemy.alive = false;
                     this.player.score += 200;
+                    this.spawnScorePopup(enemy.x, enemy.y, 200);
                 }
             });
         }
@@ -888,6 +1220,7 @@ class Game {
                 if (this.player.isStar) {
                     plant.alive = false;
                     this.player.score += 200;
+                    this.spawnScorePopup(plant.x * CONFIG.TILE_SIZE, plant.y * CONFIG.TILE_SIZE, 200);
                 } else if (!this.player.isInvincible) {
                     if (this.player.isBig) {
                         this.player.shrink();
@@ -939,6 +1272,13 @@ class Game {
             }
         }
 
+        // Update score popups
+        for (const p of this.scorePopups) {
+            p.y -= 1.5;
+            p.life++;
+        }
+        this.scorePopups = this.scorePopups.filter(p => p.life < p.maxLife);
+
         this.scoreElement.textContent = this.player.score;
         this.coinsElement.textContent = this.player.coins;
 
@@ -980,7 +1320,29 @@ class Game {
         this.springboards.forEach(sb => this.renderer.drawSpringboard(sb, this.cameraX));
         this.piranhaPlants.forEach(p => this.renderer.drawPiranhaPlant(p, this.cameraX));
         this.fireballs.forEach(fb => this.renderer.drawFireball(fb, this.cameraX));
+        // Castle level entities
+        if (this.state.currentLevel === 4) {
+            this.podoboos.forEach(pod => this.renderer.drawPodoboo(pod, this.cameraX));
+            this.fireBars.forEach(fb => this.renderer.drawFireBar(fb, this.cameraX));
+            if (this.bowser) this.renderer.drawBowser(this.bowser, this.cameraX);
+        }
         this.renderer.drawMario(this.player, this.cameraX);
+
+        // Score popups
+        for (const p of this.scorePopups) {
+            const px = p.x - this.cameraX;
+            const alpha = 1 - p.life / p.maxLife;
+            this.ctx.globalAlpha = Math.max(0, alpha);
+            this.ctx.font = 'bold 14px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeText(p.text, px, p.y);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillText(p.text, px, p.y);
+        }
+        this.ctx.globalAlpha = 1;
+        this.ctx.textAlign = 'left';
 
         for (const fw of this.fireworks) {
             for (const p of fw.particles) {
@@ -993,6 +1355,45 @@ class Game {
             }
         }
         this.ctx.globalAlpha = 1;
+
+        // Princess message display
+        if (this.princessMessage && this.state.currentLevel === 4) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(0, 0, CONFIG.SCREEN_WIDTH, CONFIG.SCREEN_HEIGHT);
+            // Toad character
+            const toadX = CONFIG.SCREEN_WIDTH / 2 - 30;
+            const toadY = CONFIG.SCREEN_HEIGHT / 2 - 60;
+            // Mushroom cap
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(toadX, toadY, 60, 30);
+            this.ctx.fillStyle = '#e52521';
+            this.ctx.fillRect(toadX + 5, toadY + 2, 12, 12);
+            this.ctx.fillRect(toadX + 30, toadY + 2, 12, 12);
+            this.ctx.fillRect(toadX + 18, toadY + 10, 10, 10);
+            // Face
+            this.ctx.fillStyle = '#fca';
+            this.ctx.fillRect(toadX + 10, toadY + 30, 40, 25);
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(toadX + 16, toadY + 36, 4, 4);
+            this.ctx.fillRect(toadX + 38, toadY + 36, 4, 4);
+            // Body
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(toadX + 15, toadY + 55, 30, 20);
+            this.ctx.fillStyle = '#4444cc';
+            this.ctx.fillRect(toadX + 15, toadY + 60, 30, 15);
+
+            // Text
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 16px monospace';
+            this.ctx.textAlign = 'center';
+            const msg1 = 'THANK YOU MARIO!';
+            const msg2 = 'But our princess is in';
+            const msg3 = 'another castle!';
+            this.ctx.fillText(msg1, CONFIG.SCREEN_WIDTH / 2, CONFIG.SCREEN_HEIGHT / 2 + 60);
+            this.ctx.fillText(msg2, CONFIG.SCREEN_WIDTH / 2, CONFIG.SCREEN_HEIGHT / 2 + 82);
+            this.ctx.fillText(msg3, CONFIG.SCREEN_WIDTH / 2, CONFIG.SCREEN_HEIGHT / 2 + 100);
+            this.ctx.textAlign = 'left';
+        }
 
         if (this.paused) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
@@ -1033,6 +1434,10 @@ class Game {
         if (btn) btn.style.display = showButton ? 'inline-block' : 'none';
     }
 
+    hideOverlay() {
+        this.overlay.style.display = 'none';
+    }
+
     gameLoop() {
         const renderInterval = 1000 / CONFIG.FPS;
         const physicsStep = 1000 / 60;
@@ -1050,7 +1455,13 @@ class Game {
                 lastTime = timestamp;
 
                 while (accumulator >= physicsStep) {
-                    this.update();
+                    try {
+                        this.update();
+                    } catch (e) {
+                        console.error('Update error:', e);
+                        accumulator = 0;
+                        break;
+                    }
                     accumulator -= physicsStep;
                 }
             }

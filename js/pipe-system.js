@@ -18,6 +18,10 @@ class PipeSystem {
                 { entryCol: 124, entryRow: 9, exitCol: 153, exitRow: 9 },
                 { entryCol: 142, entryRow: 8, exitCol: 187, exitRow: 9 }
             ];
+        } else if (level === 4) {
+            this.connections = [
+                { entryCol: 140, entryRow: 10, exitCol: 150, exitRow: 11 }
+            ];
         }
     }
 

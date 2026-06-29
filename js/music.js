@@ -163,6 +163,106 @@ class Music {
         }, totalDuration * 1000);
     }
 
+    playCastle() {
+        this.init();
+        if (this.playing) return;
+        this.playing = true;
+
+        const bpm = 160;
+        const beat = 60 / bpm;
+
+        // Dark, ominous castle melody — Koopa's Castle style
+        const melody = [
+            // Low ominous intro
+            [196, beat], [0, beat/2], [185, beat], [0, beat/2],
+            [174.61, beat*2], [0, beat],
+            [164.81, beat], [0, beat/2], [174.61, beat], [0, beat/2],
+            [185, beat*2], [0, beat],
+
+            // Tense rising section
+            [220, beat], [0, beat/2], [207.65, beat], [0, beat/2],
+            [196, beat], [0, beat/2], [185, beat], [0, beat/2],
+            [174.61, beat*2], [0, beat],
+            [196, beat], [0, beat/2], [220, beat], [0, beat/2],
+            [261.63, beat*2], [0, beat],
+
+            // Descending dread
+            [246.94, beat], [0, beat/4], [233.08, beat], [0, beat/4],
+            [220, beat], [0, beat/4], [196, beat], [0, beat/4],
+            [174.61, beat*2], [0, beat],
+            [164.81, beat], [0, beat/2], [174.61, beat], [0, beat/2],
+            [196, beat*2], [0, beat*2],
+        ];
+
+        let t = this.ctx.currentTime + 0.1;
+        melody.forEach(([freq, dur]) => {
+            if (freq > 0) {
+                this.playNote(freq, t, dur * 0.85, 'triangle');
+                // Add bass drone
+                this.playNote(freq / 2, t, dur * 0.9, 'sawtooth');
+            }
+            t += dur;
+        });
+
+        const totalDuration = melody.reduce((sum, [, dur]) => sum + dur, 0);
+        this.currentTrack = 'playCastle';
+        this.loopDuration = totalDuration * 1000;
+        this.loopScheduledAt = performance.now() + this.loopDuration;
+        this.loopTimer = setTimeout(() => {
+            this.playing = false;
+            this.playCastle();
+        }, totalDuration * 1000);
+    }
+
+    playBoss() {
+        this.init();
+        if (this.playing) return;
+        this.playing = true;
+
+        const bpm = 200;
+        const beat = 60 / bpm;
+
+        // Fast, urgent boss music
+        const melody = [
+            [330, beat/2], [330, beat/2], [0, beat/4], [330, beat/2], [0, beat/4],
+            [262, beat/2], [330, beat/2], [0, beat/4], [392, beat], [0, beat/2],
+
+            [196, beat], [0, beat/2],
+            [262, beat/2], [0, beat/4], [330, beat/2], [0, beat/4],
+            [392, beat/2], [0, beat/4], [523, beat], [0, beat/2],
+
+            [392, beat/2], [0, beat/4], [349.23, beat/2], [0, beat/4],
+            [330, beat/2], [0, beat/4], [262, beat/2], [0, beat/4],
+            [220, beat], [0, beat/2],
+            [246.94, beat/2], [0, beat/4], [277.18, beat/2], [0, beat/4],
+            [311.13, beat], [0, beat],
+
+            [330, beat/2], [0, beat/4], [330, beat/2], [0, beat/4],
+            [330, beat/2], [0, beat/4], [262, beat/2], [0, beat/4],
+            [392, beat/2], [0, beat/4], [392, beat/2], [0, beat/4],
+            [440, beat/2], [0, beat/4], [392, beat/2], [0, beat/4],
+            [330, beat], [0, beat],
+        ];
+
+        let t = this.ctx.currentTime + 0.1;
+        melody.forEach(([freq, dur]) => {
+            if (freq > 0) {
+                this.playNote(freq, t, dur * 0.8, 'square');
+                this.playNote(freq * 0.5, t, dur * 0.9, 'sawtooth');
+            }
+            t += dur;
+        });
+
+        const totalDuration = melody.reduce((sum, [, dur]) => sum + dur, 0);
+        this.currentTrack = 'playBoss';
+        this.loopDuration = totalDuration * 1000;
+        this.loopScheduledAt = performance.now() + this.loopDuration;
+        this.loopTimer = setTimeout(() => {
+            this.playing = false;
+            this.playBoss();
+        }, totalDuration * 1000);
+    }
+
     // 跳跃音效
     jump() {
         this.init();
@@ -375,6 +475,71 @@ class Music {
             osc.start(t + i * 0.1);
             osc.stop(t + i * 0.1 + 0.12);
         });
+    }
+
+    bridgeBreak() {
+        this.init();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, t);
+        osc.frequency.exponentialRampToValueAtTime(60, t + 0.3);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(gain);
+        gain.connect(this.gainNode);
+        osc.start(t);
+        osc.stop(t + 0.35);
+    }
+
+    axeGrab() {
+        this.init();
+        const t = this.ctx.currentTime;
+        [880, 1175, 1320].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.18, t + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.12);
+            osc.connect(gain);
+            gain.connect(this.gainNode);
+            osc.start(t + i * 0.06);
+            osc.stop(t + i * 0.06 + 0.12);
+        });
+    }
+
+    bowserFall() {
+        this.init();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, t);
+        osc.frequency.exponentialRampToValueAtTime(50, t + 0.8);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+        osc.connect(gain);
+        gain.connect(this.gainNode);
+        osc.start(t);
+        osc.stop(t + 0.9);
+    }
+
+    podobooLaunch() {
+        this.init();
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, t);
+        osc.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+        gain.gain.setValueAtTime(0.1, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        osc.connect(gain);
+        gain.connect(this.gainNode);
+        osc.start(t);
+        osc.stop(t + 0.12);
     }
 
     stop() {

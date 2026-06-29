@@ -130,9 +130,12 @@ class Mario {
 
         this.onGround = false;
 
-        this.velY += CONFIG.GRAVITY;
-        if (this.velY > CONFIG.MAX_FALL_SPEED) this.velY = CONFIG.MAX_FALL_SPEED;
+        if (!this.wasOnGround) {
+            this.velY += CONFIG.GRAVITY;
+            if (this.velY > CONFIG.MAX_FALL_SPEED) this.velY = CONFIG.MAX_FALL_SPEED;
+        }
 
+        this.prevX = this.x;
         this.x += this.velX;
         this.resolveTileCollisionX(tiles);
 
@@ -165,16 +168,51 @@ class Mario {
     }
 
     resolveTileCollisionX(tiles) {
+        const offsetX = (this.width - 24) / 2;
+        const bounds = {
+            x: this.x + offsetX,
+            y: this.y,
+            width: 24,
+            height: this.height
+        };
+        const prevOffsetX = (this.width - 24) / 2;
+        const prevBoundsX = this.prevX + prevOffsetX;
+
         for (const tile of tiles) {
             if (!this.isSolid(tile.type)) continue;
-            const bounds = this.getBounds();
             if (!this.collides(bounds, tile)) continue;
 
-            const hw = (this.width + this.hitboxWidth) / 2;
+            // Skip X collision for ceiling tiles: if the previous-frame hitbox
+            // already overlapped this tile, Mario entered from below (head-bump
+            // scenario) and X collision should not push him sideways.
+            const prevHOverlap = prevBoundsX < tile.x + tile.width &&
+                                prevBoundsX + 24 > tile.x;
+            if (prevHOverlap) continue;
+
             const feetY = this.y + this.height;
             const stepHeight = feetY - tile.y;
-            const hOverlap = bounds.x < tile.x + tile.width && bounds.x + bounds.width > tile.x;
-            const canStepUp = hOverlap && stepHeight >= 0 && stepHeight <= 2 && this.velY >= 0;
+
+            let canStepUp = stepHeight > 0 && stepHeight <= 6 && this.velY <= 0;
+            if (canStepUp) {
+                for (const other of tiles) {
+                    if (!this.isSolid(other.type)) continue;
+                    if (other.x === tile.x && Math.abs(other.y - (tile.y - CONFIG.TILE_SIZE)) < 1) {
+                        canStepUp = false;
+                        break;
+                    }
+                }
+            }
+            if (canStepUp) {
+                const newY = tile.y - this.height;
+                const checkBounds = { x: bounds.x, y: newY, width: bounds.width, height: this.height };
+                for (const other of tiles) {
+                    if (!this.isSolid(other.type)) continue;
+                    if (this.collides(checkBounds, other)) {
+                        canStepUp = false;
+                        break;
+                    }
+                }
+            }
 
             if (canStepUp) {
                 this.y = tile.y - this.height;
@@ -182,9 +220,9 @@ class Mario {
                 this.onGround = true;
             } else {
                 if (this.velX > 0) {
-                    this.x = tile.x - hw;
+                    this.x = tile.x - this.width;
                 } else if (this.velX < 0) {
-                    this.x = tile.x + tile.width - (this.width - hw);
+                    this.x = tile.x + tile.width;
                 }
                 this.velX = 0;
             }
@@ -192,36 +230,72 @@ class Mario {
     }
 
     resolveTileCollisionY(tiles) {
+        // Pre-check: detect standing-on before the main loop.
+        // This prevents onGround oscillation when feet are exactly at tile top.
         const bounds = this.getBounds();
+        const feetY = this.y + this.height;
+        if (this.velY >= 0) {
+            for (const tile of tiles) {
+                if (!this.isSolid(tile.type)) continue;
+                const hOverlap = bounds.x < tile.x + tile.width &&
+                                 bounds.x + bounds.width > tile.x;
+                if (hOverlap && Math.abs(feetY - tile.y) < 2) {
+                    this.onGround = true;
+                    break;
+                }
+            }
+        }
+
         for (const tile of tiles) {
             if (!this.isSolid(tile.type)) continue;
 
-            const feetY = this.y + this.height;
-            const prevFeetY = feetY - this.velY;
-            const hOverlap = bounds.x < tile.x + tile.width && bounds.x + bounds.width > tile.x;
+            let tileBounds = this.getBounds();
+            const hitBounds = this.collides(tileBounds, tile);
+            if (!hitBounds) continue;
 
-            // Landing: feet crossed into or onto tile surface from above
-            if (hOverlap && this.velY >= 0 && prevFeetY <= tile.y + 1 && feetY >= tile.y) {
+            const curFeetY = this.y + this.height;
+            const prevFeetY = curFeetY - this.velY;
+            const prevTopY = this.y - this.velY;
+            const hOverlap = tileBounds.x < tile.x + tile.width && tileBounds.x + tileBounds.width > tile.x;
+            const landedFromFall = hOverlap && this.velY > 0 && prevFeetY < tile.y && curFeetY >= tile.y;
+            const standingOn = hOverlap && this.velY === 0 && Math.abs(curFeetY - tile.y) < 0.5;
+            if (landedFromFall || standingOn) {
                 this.y = tile.y - this.height;
                 this.velY = 0;
                 this.onGround = true;
                 continue;
             }
 
-            if (this.collides(bounds, tile)) {
-                if (this.velY > 0) {
-                    this.y = tile.y - this.height;
+            // Head-bump: Mario rising into a tile from below.
+            const feetBelowTileBottom = prevFeetY >= tile.y + tile.height;
+            if (this.velY < 0 && prevTopY >= tile.y + tile.height - 2 && feetBelowTileBottom) {
+                const prevBoundsX = tileBounds.x - this.velX;
+                const wasHOverlap = prevBoundsX < tile.x + tile.width &&
+                                    prevBoundsX + tileBounds.width > tile.x;
+                if (wasHOverlap) {
                     this.velY = 0;
-                    this.onGround = true;
-                } else if (this.velY < 0) {
-                    if (bounds.y <= tile.y + tile.height + 2) {
-                        this.y = tile.y + tile.height;
-                    }
-                    this.velY = 0;
+                    this.onGround = false;
                     if (tile.type === 3 || tile.type === 2 || tile.type === 14 || tile.type === 15) {
                         this.hitTile = tile;
                     }
+                    continue;
                 }
+            }
+
+            if (this.velY > 0) {
+                const penetration = curFeetY - tile.y;
+                if (penetration <= 4) {
+                    // Only land on top if Mario's head is above the tile
+                    if (this.y < tile.y) {
+                        this.y = tile.y - this.height;
+                        this.velY = 0;
+                        this.onGround = true;
+                    }
+                }
+            } else if (this.velY === 0 && this.y < tile.y) {
+                // Mario on top of tile with zero velocity — confirm landing
+                this.y = tile.y - this.height;
+                this.onGround = true;
             }
         }
     }

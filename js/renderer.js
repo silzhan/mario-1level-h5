@@ -5,7 +5,9 @@ class Renderer {
         this.loaded = false;
         this.animTimer = 0;
         this.currentLevel = 1;
+        this.groundedFrames = 0;
         this.mushroomSprite = null;
+        this.greenMushroomSprite = null;
     }
 
     async loadSprites() {
@@ -13,6 +15,12 @@ class Renderer {
             'mario-idle': 'img/mario-idle.png',
             'mario-walk': 'img/mario-walk.png',
             'mario-jump': 'img/mario-jump.png',
+            'mario-duck': 'img/mario-duck.png',
+            'mario-dead': 'img/mario-dead.png',
+            'mario-big-idle': 'img/mario-big-idle.png',
+            'mario-big-walk': 'img/mario-big-walk.png',
+            'mario-big-jump': 'img/mario-big-jump.png',
+            'mario-big-duck': 'img/mario-big-duck.png',
             'goomba': 'img/goomba.png',
             'coin': 'img/coin.png',
             'ground': 'img/ground.png',
@@ -21,6 +29,8 @@ class Renderer {
             'question': 'img/question-block.png',
             'used': 'img/used-block.png',
             'pipe': 'img/pipe.png',
+            'mushroom-super': 'img/mushroom-super.svg',
+            'mushroom-1up': 'img/mushroom-1up.svg',
         };
 
         const promises = Object.entries(spriteList).map(([name, src]) => {
@@ -48,46 +58,44 @@ class Renderer {
         const S = '#f8d8b0';
         const B = '#000';
 
-        // 红帽顶部
+        // row 0
         g.fillStyle = R;
-        g.fillRect(5, 0, 6, 1);
-        g.fillRect(3, 1, 10, 1);
-
-        // 红帽 + 两侧白斑
-        g.fillRect(2, 2, 12, 1);
-        g.fillStyle = W;
-        g.fillRect(2, 2, 3, 1);
-        g.fillStyle = R; g.fillRect(5, 2, 6, 1);
-        g.fillStyle = W; g.fillRect(11, 2, 3, 1);
-
+        g.fillRect(4, 0, 8, 1);
+        // row 1
+        g.fillRect(2, 1, 12, 1);
+        // row 2: W spots
+        g.fillRect(1, 2, 14, 1);
+        g.fillStyle = W; g.fillRect(2, 2, 3, 1); g.fillRect(11, 2, 3, 1);
+        // row 3
         g.fillStyle = R; g.fillRect(1, 3, 14, 1);
-        g.fillStyle = W; g.fillRect(1, 3, 4, 1);
-        g.fillStyle = R; g.fillRect(5, 3, 6, 1);
-        g.fillStyle = W; g.fillRect(11, 3, 4, 1);
-
-        g.fillStyle = R; g.fillRect(1, 4, 14, 1);
-        g.fillStyle = W; g.fillRect(1, 4, 4, 1);
-        g.fillStyle = R; g.fillRect(5, 4, 6, 1);
-        g.fillStyle = W; g.fillRect(11, 4, 4, 1);
-
+        g.fillStyle = W; g.fillRect(1, 3, 4, 1); g.fillRect(11, 3, 4, 1);
+        // row 4
+        g.fillStyle = R; g.fillRect(0, 4, 16, 1);
+        g.fillStyle = W; g.fillRect(0, 4, 4, 1); g.fillRect(12, 4, 4, 1);
+        // row 5
         g.fillStyle = R; g.fillRect(0, 5, 16, 1);
-        g.fillRect(0, 6, 16, 1);
+        g.fillStyle = W; g.fillRect(0, 5, 3, 1); g.fillRect(13, 5, 3, 1);
+        // row 6
+        g.fillStyle = R; g.fillRect(0, 6, 16, 1);
+        // row 7
         g.fillRect(1, 7, 14, 1);
-        g.fillRect(2, 8, 12, 1);
-
-        // 脸/茎部 + 眼睛
-        g.fillStyle = S; g.fillRect(5, 9, 6, 1);
-        g.fillRect(4, 10, 8, 1);
-        g.fillStyle = B; g.fillRect(6, 10, 1, 1); g.fillStyle = S; g.fillRect(7, 10, 2, 1); g.fillStyle = B; g.fillRect(9, 10, 1, 1);
+        // row 8: face
+        g.fillStyle = S; g.fillRect(3, 8, 10, 1);
+        // row 9: eyes
+        g.fillStyle = S; g.fillRect(3, 9, 10, 1);
+        g.fillStyle = B; g.fillRect(5, 9, 2, 1); g.fillRect(9, 9, 2, 1);
+        // row 10: face
+        g.fillStyle = S; g.fillRect(3, 10, 10, 1);
+        // row 11: face bottom
         g.fillStyle = S; g.fillRect(4, 11, 8, 1);
-        g.fillStyle = B; g.fillRect(6, 11, 1, 1); g.fillStyle = S; g.fillRect(7, 11, 2, 1); g.fillStyle = B; g.fillRect(9, 11, 1, 1);
-        g.fillStyle = S; g.fillRect(5, 12, 6, 1);
-
-        // 白色底座
+        // row 12-14: stem
         g.fillStyle = W;
-        g.fillRect(4, 13, 8, 1);
+        g.fillRect(4, 12, 8, 1);
+        g.fillRect(3, 13, 10, 1);
         g.fillRect(3, 14, 10, 1);
-        g.fillRect(3, 15, 10, 1);
+        // row 15: feet
+        g.fillStyle = R;
+        g.fillRect(2, 15, 5, 1); g.fillRect(9, 15, 5, 1);
 
         return c;
     }
@@ -113,13 +121,44 @@ class Renderer {
                 bridgeDark: '#6b3410',
                 bridgeNail: '#888'
             };
+        } else if (level === 4) {
+            this.theme = {
+                castleBrick: '#606060',
+                castleBrickLight: '#787878',
+                castleBrickDark: '#484848',
+                unbreakable: '#3a3a3a',
+                unbreakableLight: '#505050'
+            };
         } else {
             this.theme = null;
         }
     }
 
     clear(cameraX) {
-        if (this.currentLevel === 2) {
+        if (this.currentLevel === 4) {
+            // Castle: pure black background with subtle lava glow at bottom
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillRect(0, 0, CONFIG.SCREEN_WIDTH, CONFIG.SCREEN_HEIGHT);
+            // Subtle red glow from lava at bottom
+            const gradient = this.ctx.createLinearGradient(0, CONFIG.SCREEN_HEIGHT - 120, 0, CONFIG.SCREEN_HEIGHT);
+            gradient.addColorStop(0, 'rgba(200, 30, 0, 0)');
+            gradient.addColorStop(1, 'rgba(200, 30, 0, 0.15)');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, CONFIG.SCREEN_HEIGHT - 120, CONFIG.SCREEN_WIDTH, 120);
+            // Animated torch flickers on walls
+            if (cameraX !== undefined) {
+                const torchSpacing = 200;
+                for (let i = 0; i < 6; i++) {
+                    const tx = i * torchSpacing - (cameraX % torchSpacing) + 80;
+                    const ty = 60;
+                    const flicker = Math.sin(this.animTimer * 0.2 + i * 1.5) * 3;
+                    this.ctx.fillStyle = 'rgba(255, 136, 0, 0.08)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(tx, ty + flicker, 30, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+        } else if (this.currentLevel === 2) {
             this.ctx.fillStyle = '#000000';
             this.ctx.fillRect(0, 0, CONFIG.SCREEN_WIDTH, CONFIG.SCREEN_HEIGHT);
             this.ctx.fillStyle = 'rgba(30, 30, 50, 0.15)';
@@ -489,6 +528,128 @@ class Renderer {
                         this.ctx.fillRect(tx + T - 4, ty + T - 6, 2, 2);
                         break;
                     }
+
+                    // === CASTLE TILES ===
+
+                    case 18: { // Lava
+                        const wave = Math.sin(this.animTimer * 0.08 + col * 0.5) * 3;
+                        const r = 200 + Math.floor(Math.sin(this.animTimer * 0.05 + col) * 30);
+                        const g = 40 + Math.floor(Math.sin(this.animTimer * 0.07 + col * 0.3) * 20);
+                        this.ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+                        this.ctx.fillRect(tx, ty, T, T);
+                        // Bright lava surface (only top row of lava)
+                        if (row === 12 || levelMap[row - 1][col] !== 18) {
+                            this.ctx.fillStyle = '#ff6600';
+                            this.ctx.fillRect(tx, ty + wave, T, 6);
+                            this.ctx.fillStyle = '#ffaa00';
+                            this.ctx.fillRect(tx + 4, ty + wave + 1, T - 8, 3);
+                        }
+                        // Darker depth below
+                        if (row === 14) {
+                            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                            this.ctx.fillRect(tx, ty, T, T);
+                        }
+                        break;
+                    }
+
+                    case 19: { // Castle brick
+                        this.ctx.fillStyle = '#606060';
+                        this.ctx.fillRect(tx, ty, T, T);
+                        this.ctx.fillStyle = '#787878';
+                        this.ctx.fillRect(tx, ty, T, 2);
+                        this.ctx.fillRect(tx, ty, 2, T / 2);
+                        this.ctx.fillRect(tx + T / 2, ty + T / 2, 2, T / 2);
+                        this.ctx.fillStyle = '#484848';
+                        this.ctx.fillRect(tx, ty + T / 2 - 1, T, 2);
+                        this.ctx.fillRect(tx + T / 2 - 1, ty, 2, T / 2);
+                        this.ctx.fillRect(tx + T - 1, ty + T / 2, 1, T / 2);
+                        // Subtle dark red accent on some bricks
+                        if ((col + row) % 7 === 0) {
+                            this.ctx.fillStyle = 'rgba(180, 40, 20, 0.15)';
+                            this.ctx.fillRect(tx + 4, ty + 4, T - 8, T - 8);
+                        }
+                        break;
+                    }
+
+                    case 20: { // Unbreakable brick
+                        this.ctx.fillStyle = '#3a3a3a';
+                        this.ctx.fillRect(tx, ty, T, T);
+                        this.ctx.fillStyle = '#505050';
+                        this.ctx.fillRect(tx, ty, T, 2);
+                        this.ctx.fillRect(tx, ty, 2, T);
+                        this.ctx.fillStyle = '#2a2a2a';
+                        this.ctx.fillRect(tx + T - 2, ty, 2, T);
+                        this.ctx.fillRect(tx, ty + T - 2, T, 2);
+                        // Cross-hatch pattern
+                        this.ctx.fillStyle = '#454545';
+                        for (let d = 0; d < T; d += 8) {
+                            this.ctx.fillRect(tx + d, ty + d, 2, 2);
+                        }
+                        break;
+                    }
+
+                    case 21: { // Bridge plank
+                        this.ctx.fillStyle = '#8b5e3c';
+                        this.ctx.fillRect(tx, ty, T, T);
+                        this.ctx.fillStyle = '#a07050';
+                        this.ctx.fillRect(tx, ty, T, 3);
+                        this.ctx.fillStyle = '#6b3e1c';
+                        this.ctx.fillRect(tx, ty + T - 2, T, 2);
+                        // Wood grain lines
+                        this.ctx.fillStyle = '#7a5030';
+                        this.ctx.fillRect(tx + 10, ty + 4, 1, T - 6);
+                        this.ctx.fillRect(tx + 22, ty + 4, 1, T - 6);
+                        // Nails
+                        this.ctx.fillStyle = '#888';
+                        this.ctx.fillRect(tx + 2, ty + 4, 2, 2);
+                        this.ctx.fillRect(tx + T - 4, ty + 4, 2, 2);
+                        break;
+                    }
+
+                    case 22: { // Axe
+                        // Stone pedestal
+                        this.ctx.fillStyle = '#666';
+                        this.ctx.fillRect(tx + 8, ty + T - 8, T - 16, 8);
+                        this.ctx.fillStyle = '#888';
+                        this.ctx.fillRect(tx + 10, ty + T - 8, T - 20, 2);
+                        // Axe handle
+                        this.ctx.fillStyle = '#8b4513';
+                        this.ctx.fillRect(tx + T / 2 - 2, ty + 4, 4, T - 12);
+                        // Axe blade
+                        this.ctx.fillStyle = '#c0c0c0';
+                        this.ctx.fillRect(tx + T / 2 - 10, ty + 2, 20, 8);
+                        this.ctx.fillStyle = '#e0e0e0';
+                        this.ctx.fillRect(tx + T / 2 - 8, ty + 3, 16, 3);
+                        this.ctx.fillStyle = '#999';
+                        this.ctx.fillRect(tx + T / 2 - 10, ty + 8, 20, 2);
+                        // Glint animation
+                        const glint = Math.sin(this.animTimer * 0.1) * 0.3 + 0.3;
+                        this.ctx.fillStyle = `rgba(255, 255, 255, ${glint})`;
+                        this.ctx.fillRect(tx + T / 2 - 6, ty + 4, 4, 2);
+                        break;
+                    }
+
+                    case 23: { // Torch
+                        // Wall bracket
+                        this.ctx.fillStyle = '#666';
+                        this.ctx.fillRect(tx + T / 2 - 3, ty + T / 2, 6, T / 2);
+                        this.ctx.fillStyle = '#888';
+                        this.ctx.fillRect(tx + T / 2 - 2, ty + T / 2, 4, 2);
+                        // Flame (animated)
+                        const flameFrame = Math.floor(this.animTimer / 6) % 3;
+                        const flameH = 8 + flameFrame * 2;
+                        const flameW = 6 - flameFrame;
+                        this.ctx.fillStyle = '#ff8800';
+                        this.ctx.fillRect(tx + T / 2 - flameW / 2, ty + T / 2 - flameH, flameW, flameH);
+                        this.ctx.fillStyle = '#ffcc00';
+                        this.ctx.fillRect(tx + T / 2 - 1, ty + T / 2 - flameH + 2, 2, flameH - 4);
+                        // Glow
+                        this.ctx.fillStyle = 'rgba(255, 136, 0, 0.15)';
+                        this.ctx.beginPath();
+                        this.ctx.arc(tx + T / 2, ty + T / 2 - flameH / 2, 12, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        break;
+                    }
                 }
             }
         }
@@ -516,24 +677,13 @@ class Renderer {
         const y = player.y;
 
         if (!player.alive) {
-            const w = 28, h = 32;
-            this.ctx.fillStyle = COLORS.MARIO_RED;
-            this.ctx.fillRect(x + 8, y + 12, 12, 10);
-            this.ctx.fillRect(x, y + 4, 6, 10);
-            this.ctx.fillRect(x + w - 6, y + 4, 6, 10);
-            this.ctx.fillStyle = COLORS.MARIO_SKIN;
-            this.ctx.fillRect(x + 8, y + 4, 12, 8);
-            this.ctx.fillRect(x + 2, y, 4, 6);
-            this.ctx.fillRect(x + w - 6, y, 4, 6);
-            this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(x + 11, y + 6, 2, 2);
-            this.ctx.fillRect(x + 15, y + 6, 2, 2);
-            this.ctx.fillStyle = COLORS.MARIO_BLUE;
-            this.ctx.fillRect(x + 4, y + 22, 8, 10);
-            this.ctx.fillRect(x + w - 12, y + 22, 8, 10);
-            this.ctx.fillStyle = COLORS.MARIO_SKIN;
-            this.ctx.fillRect(x + 4, y + 28, 8, 4);
-            this.ctx.fillRect(x + w - 12, y + 28, 8, 4);
+            if (this.sprites['mario-dead']) {
+                this.ctx.imageSmoothingEnabled = false;
+                const drawW = player.isBig ? 32 : 28;
+                const drawH = player.isBig ? 48 : 32;
+                this.ctx.drawImage(this.sprites['mario-dead'], x - 2, y, drawW, drawH);
+                this.ctx.imageSmoothingEnabled = true;
+            }
             return;
         }
 
@@ -545,64 +695,45 @@ class Renderer {
             this.ctx.translate(-flipX, 0);
         }
 
-        if (player.isBig && !player.isDucking) {
-            // 大马里奥：精灵等比例放大 1.5 倍
-            let sprite;
-            if (!player.onGround) {
-                sprite = this.sprites['mario-jump'];
-            } else if (Math.abs(player.velX) > 0.5) {
-                const walkFrame = Math.floor(this.animTimer / 8) % 2;
-                sprite = walkFrame === 0 ? this.sprites['mario-walk'] : this.sprites['mario-idle'];
-            } else {
-                sprite = this.sprites['mario-idle'];
-            }
+        let sprite;
+        if (player.onGround) {
+            this.groundedFrames++;
+        } else {
+            this.groundedFrames = 0;
+        }
 
-            if (sprite) {
-                this.ctx.imageSmoothingEnabled = false;
-                this.ctx.drawImage(sprite, x - 7, y, 42, 42);
-                this.ctx.imageSmoothingEnabled = true;
+        if (!player.onGround || this.groundedFrames < 3) {
+            sprite = player.isBig ? this.sprites['mario-big-jump'] : this.sprites['mario-jump'];
+        } else if (Math.abs(player.velX) > 0.5) {
+            const walkFrame = Math.floor(this.animTimer / 8) % 2;
+            if (player.isBig) {
+                sprite = walkFrame === 0 ? this.sprites['mario-big-walk'] : this.sprites['mario-big-idle'];
             } else {
-                this.ctx.fillStyle = COLORS.MARIO_RED;
-                this.ctx.fillRect(x, y, 32, 32);
-                this.ctx.fillStyle = COLORS.MARIO_SKIN;
-                this.ctx.fillRect(x + 6, y + 8, 20, 8);
-                this.ctx.fillStyle = '#3030e0';
-                this.ctx.fillRect(x + 5, y + 32, 11, 6);
-                this.ctx.fillRect(x + 16, y + 32, 11, 6);
-            }
-        } else if (player.isDucking) {
-            const sprite = this.sprites['mario-idle'];
-            if (sprite) {
-                this.ctx.imageSmoothingEnabled = false;
-                this.ctx.drawImage(sprite, x - 7, y, 42, 30);
-                this.ctx.imageSmoothingEnabled = true;
-            } else {
-                this.ctx.fillStyle = COLORS.MARIO_RED;
-                this.ctx.fillRect(x, y, player.width, player.height);
+                sprite = walkFrame === 0 ? this.sprites['mario-walk'] : this.sprites['mario-idle'];
             }
         } else {
-            const T = CONFIG.TILE_SIZE;
-            let sprite;
-            if (!player.onGround) {
-                sprite = this.sprites['mario-jump'];
-            } else if (Math.abs(player.velX) > 0.5) {
-                const walkFrame = Math.floor(this.animTimer / 8) % 2;
-                sprite = walkFrame === 0 ? this.sprites['mario-walk'] : this.sprites['mario-idle'];
-            } else {
-                sprite = this.sprites['mario-idle'];
-            }
+            sprite = player.isBig ? this.sprites['mario-big-idle'] : this.sprites['mario-idle'];
+        }
 
-            if (sprite) {
-                this.ctx.drawImage(sprite, x - 2, y - 2, T, T);
+        this.ctx.imageSmoothingEnabled = false;
+
+        if (player.isBig) {
+            if (player.isDucking) {
+                sprite = this.sprites['mario-big-duck'] || this.sprites['mario-big-idle'];
+                if (sprite) this.ctx.drawImage(sprite, x - 8, y, 36, 32);
             } else {
-                this.ctx.fillStyle = COLORS.MARIO_RED;
-                this.ctx.fillRect(x, y, player.width, player.height);
-                this.ctx.fillStyle = COLORS.MARIO_SKIN;
-                this.ctx.fillRect(x + 4, y + 4, player.width - 8, 10);
-                this.ctx.fillStyle = COLORS.MARIO_BLUE;
-                this.ctx.fillRect(x + 2, y + 14, player.width - 4, 12);
+                if (sprite) this.ctx.drawImage(sprite, x - 8, y - 16, 36, 54);
+            }
+        } else {
+            if (player.isDucking) {
+                sprite = this.sprites['mario-duck'] || this.sprites['mario-idle'];
+                if (sprite) this.ctx.drawImage(sprite, x - 2, y, 28, 24);
+            } else {
+                if (sprite) this.ctx.drawImage(sprite, x - 2, y, 28, 32);
             }
         }
+
+        this.ctx.imageSmoothingEnabled = true;
 
         if (player.isStar) {
             const starColors = ['#ff0000', '#00ff00', '#0088ff', '#ffff00', '#ff00ff'];
@@ -610,6 +741,14 @@ class Renderer {
             this.ctx.globalCompositeOperation = 'source-atop';
             this.ctx.fillStyle = starColors[colorIdx];
             this.ctx.globalAlpha = 0.4;
+            this.ctx.fillRect(x - 10, y - 5, player.width + 20, player.height + 10);
+            this.ctx.globalAlpha = 1;
+            this.ctx.globalCompositeOperation = 'source-over';
+        } else if (player.isFire) {
+            const pulse = Math.sin(this.animTimer * 0.15) * 0.05 + 0.2;
+            this.ctx.globalCompositeOperation = 'source-atop';
+            this.ctx.fillStyle = '#ff6600';
+            this.ctx.globalAlpha = pulse;
             this.ctx.fillRect(x - 10, y - 5, player.width + 20, player.height + 10);
             this.ctx.globalAlpha = 1;
             this.ctx.globalCompositeOperation = 'source-over';
@@ -754,19 +893,39 @@ class Renderer {
         const y = mushroom.y;
 
         if (mushroom.type === '1up') {
-            this.ctx.fillStyle = '#00a800';
-            this.ctx.fillRect(x + 4, y, 20, 12);
-            this.ctx.fillStyle = '#fff';
-            this.ctx.fillRect(x + 8, y + 2, 4, 4);
-            this.ctx.fillRect(x + 16, y + 2, 4, 4);
-            this.ctx.fillStyle = '#fca';
-            this.ctx.fillRect(x + 4, y + 12, 20, 10);
-            this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(x + 8, y + 14, 3, 3);
-            this.ctx.fillRect(x + 17, y + 14, 3, 3);
-            this.ctx.fillStyle = '#6b3410';
-            this.ctx.fillRect(x + 6, y + 22, 6, 6);
-            this.ctx.fillRect(x + 16, y + 22, 6, 6);
+            this.ctx.imageSmoothingEnabled = false;
+            if (this.sprites['mushroom-1up']) {
+                this.ctx.drawImage(this.sprites['mushroom-1up'], x, y, 28, 28);
+            } else if (!this.greenMushroomSprite) {
+                const c = document.createElement('canvas');
+                c.width = 16; c.height = 16;
+                const g = c.getContext('2d');
+                const G = '#00a800', W = '#fff', S = '#f8d8b0', B = '#000';
+                g.fillStyle = G;
+                g.fillRect(4,0,8,1); g.fillRect(2,1,12,1);
+                g.fillRect(1,2,14,1); g.fillRect(1,3,14,1);
+                g.fillRect(0,4,16,1); g.fillRect(0,5,16,1);
+                g.fillRect(0,6,16,1); g.fillRect(1,7,14,1);
+                g.fillStyle = W;
+                g.fillRect(2,2,3,1); g.fillRect(11,2,3,1);
+                g.fillRect(1,3,4,1); g.fillRect(11,3,4,1);
+                g.fillRect(0,4,4,1); g.fillRect(12,4,4,1);
+                g.fillRect(0,5,3,1); g.fillRect(13,5,3,1);
+                g.fillStyle = S;
+                g.fillRect(3,8,10,1); g.fillRect(3,9,10,1);
+                g.fillRect(3,10,10,1); g.fillRect(4,11,8,1);
+                g.fillStyle = B;
+                g.fillRect(5,9,2,1); g.fillRect(9,9,2,1);
+                g.fillStyle = W;
+                g.fillRect(4,12,8,1); g.fillRect(3,13,10,1); g.fillRect(3,14,10,1);
+                g.fillStyle = G;
+                g.fillRect(2,15,5,1); g.fillRect(9,15,5,1);
+                this.greenMushroomSprite = c;
+            }
+            if (!this.sprites['mushroom-1up'] && this.greenMushroomSprite) {
+                this.ctx.drawImage(this.greenMushroomSprite, x, y, 28, 28);
+            }
+            this.ctx.imageSmoothingEnabled = true;
         } else if (mushroom.type === 'fire') {
             const petalColor = (Math.floor(this.animTimer / 8) % 2 === 0) ? '#ff8800' : '#ffcc00';
             this.ctx.fillStyle = '#00a800';
@@ -793,24 +952,27 @@ class Renderer {
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(x + 10, y + 10, 2, 2);
             this.ctx.fillRect(x + 16, y + 10, 2, 2);
+        } else if (this.sprites['mushroom-super']) {
+            this.ctx.imageSmoothingEnabled = false;
+            this.ctx.drawImage(this.sprites['mushroom-super'], x, y, 28, 28);
+            this.ctx.imageSmoothingEnabled = true;
         } else if (this.mushroomSprite) {
             this.ctx.imageSmoothingEnabled = false;
             this.ctx.drawImage(this.mushroomSprite, x, y, 28, 28);
             this.ctx.imageSmoothingEnabled = true;
         } else {
             this.ctx.fillStyle = '#e52521';
-            this.ctx.fillRect(x + 4, y, 20, 12);
+            this.ctx.fillRect(x + 4, y, 20, 14);
             this.ctx.fillStyle = '#fff';
-            this.ctx.fillRect(x + 8, y + 2, 4, 4);
-            this.ctx.fillRect(x + 16, y + 2, 4, 4);
-            this.ctx.fillStyle = '#fca';
-            this.ctx.fillRect(x + 4, y + 12, 20, 10);
+            this.ctx.fillRect(x + 4, y + 2, 6, 6);
+            this.ctx.fillRect(x + 18, y + 2, 6, 6);
+            this.ctx.fillStyle = '#f8d8b0';
+            this.ctx.fillRect(x + 5, y + 14, 18, 8);
             this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(x + 8, y + 14, 3, 3);
-            this.ctx.fillRect(x + 17, y + 14, 3, 3);
-            this.ctx.fillStyle = '#6b3410';
-            this.ctx.fillRect(x + 6, y + 22, 6, 6);
-            this.ctx.fillRect(x + 16, y + 22, 6, 6);
+            this.ctx.fillRect(x + 8, y + 16, 3, 3);
+            this.ctx.fillRect(x + 17, y + 16, 3, 3);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(x + 5, y + 22, 18, 6);
         }
     }
 
@@ -1012,6 +1174,164 @@ class Renderer {
         this.ctx.fillRect(x, y, 10, 10);
         this.ctx.fillStyle = '#fff';
         this.ctx.fillRect(x + 3, y + 3, 4, 4);
+    }
+
+    drawPodoboo(pod, cameraX) {
+        if (!pod.alive) return;
+        const x = pod.x - cameraX;
+        const y = pod.y;
+        if (pod.state === 'waiting') return; // hidden in lava
+
+        const frame = Math.floor(pod.animTimer / 4) % 2;
+        // Fire ball body
+        this.ctx.fillStyle = frame === 0 ? '#ff4400' : '#ff8800';
+        this.ctx.fillRect(x + 2, y + 2, pod.width - 4, pod.height - 4);
+        this.ctx.fillStyle = frame === 0 ? '#ff8800' : '#ffcc00';
+        this.ctx.fillRect(x + 6, y + 4, pod.width - 12, pod.height - 8);
+        // Eyes
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(x + 6, y + 8, 4, 4);
+        this.ctx.fillRect(x + 14, y + 8, 4, 4);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(x + 7, y + 9, 2, 2);
+        this.ctx.fillRect(x + 15, y + 9, 2, 2);
+        // Glow
+        this.ctx.fillStyle = `rgba(255, 100, 0, ${0.2 + frame * 0.1})`;
+        this.ctx.beginPath();
+        this.ctx.arc(x + pod.width / 2, y + pod.height / 2, 18, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+
+    drawFireBar(fb, cameraX) {
+        if (!fb.alive) return;
+        const cx = fb.getCenterX() - cameraX;
+        const cy = fb.getCenterY();
+
+        // Center pivot
+        this.ctx.fillStyle = '#888';
+        this.ctx.fillRect(cx - 4, cy - 4, 8, 8);
+        this.ctx.fillStyle = '#aaa';
+        this.ctx.fillRect(cx - 3, cy - 3, 6, 2);
+
+        // Fireballs
+        for (let i = 0; i < fb.numBalls; i++) {
+            const bounds = fb.getBallBounds(i);
+            const bx = bounds.x - cameraX;
+            const by = bounds.y;
+            const frame = Math.floor(fb.animTimer / 3 + i) % 2;
+            this.ctx.fillStyle = frame === 0 ? '#ff6600' : '#ffaa00';
+            this.ctx.fillRect(bx, by, fb.ballSize, fb.ballSize);
+            this.ctx.fillStyle = '#ffee00';
+            this.ctx.fillRect(bx + 3, by + 3, fb.ballSize - 6, fb.ballSize - 6);
+            // Glow
+            this.ctx.fillStyle = 'rgba(255, 100, 0, 0.15)';
+            this.ctx.beginPath();
+            this.ctx.arc(bx + fb.ballSize / 2, by + fb.ballSize / 2, 10, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+    }
+
+    drawBowser(bowser, cameraX) {
+        if (!bowser.alive) return;
+        const x = bowser.x - cameraX;
+        const y = bowser.y;
+
+        this.ctx.save();
+        if (bowser.facingRight) {
+            this.ctx.translate(x + bowser.width / 2, 0);
+            this.ctx.scale(-1, 1);
+            this.ctx.translate(-(x + bowser.width / 2), 0);
+        }
+
+        // Body (green)
+        this.ctx.fillStyle = '#2d8b2d';
+        this.ctx.fillRect(x + 8, y + 20, 48, 36);
+        // Shell (dark green with spikes)
+        this.ctx.fillStyle = '#1a6b1a';
+        this.ctx.fillRect(x + 12, y + 16, 40, 28);
+        // Spikes
+        this.ctx.fillStyle = '#ff8800';
+        for (let i = 0; i < 4; i++) {
+            const sx = x + 16 + i * 10;
+            this.ctx.fillRect(sx, y + 10, 6, 8);
+            this.ctx.fillStyle = '#ffaa00';
+            this.ctx.fillRect(sx + 1, y + 11, 4, 4);
+            this.ctx.fillStyle = '#ff8800';
+        }
+
+        // Head
+        this.ctx.fillStyle = '#2d8b2d';
+        this.ctx.fillRect(x + 2, y + 2, 28, 22);
+        this.ctx.fillStyle = '#3da83d';
+        this.ctx.fillRect(x + 4, y + 4, 24, 6);
+
+        // Horns
+        this.ctx.fillStyle = '#ff8800';
+        this.ctx.fillRect(x + 2, y - 2, 6, 8);
+        this.ctx.fillRect(x + 16, y - 2, 6, 8);
+        this.ctx.fillStyle = '#ffaa00';
+        this.ctx.fillRect(x + 3, y - 1, 4, 4);
+        this.ctx.fillRect(x + 17, y - 1, 4, 4);
+
+        // Eyes
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(x + 6, y + 8, 8, 6);
+        this.ctx.fillRect(x + 18, y + 8, 8, 6);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(x + 9, y + 9, 4, 4);
+        this.ctx.fillRect(x + 21, y + 9, 4, 4);
+
+        // Mouth
+        this.ctx.fillStyle = '#a00';
+        this.ctx.fillRect(x + 4, y + 16, 24, 4);
+        // Teeth
+        this.ctx.fillStyle = '#fff';
+        for (let t = 0; t < 5; t++) {
+            this.ctx.fillRect(x + 5 + t * 5, y + 16, 3, 3);
+        }
+
+        // Belly
+        this.ctx.fillStyle = '#f8d870';
+        this.ctx.fillRect(x + 16, y + 34, 24, 16);
+        this.ctx.fillStyle = '#e8c860';
+        this.ctx.fillRect(x + 18, y + 36, 20, 12);
+
+        // Arms
+        this.ctx.fillStyle = '#2d8b2d';
+        this.ctx.fillRect(x - 2, y + 24, 10, 14);
+        this.ctx.fillRect(x + 56, y + 24, 10, 14);
+        // Claws
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(x - 2, y + 36, 4, 4);
+        this.ctx.fillRect(x + 58, y + 36, 4, 4);
+
+        // Legs/feet
+        const walkFrame = Math.floor(this.animTimer / 10) % 2;
+        this.ctx.fillStyle = '#2d8b2d';
+        this.ctx.fillRect(x + 12, y + 52, 12, 12 - walkFrame * 2);
+        this.ctx.fillRect(x + 40, y + 52, 12, 10 + walkFrame * 2);
+        // Feet claws
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(x + 10, y + 60, 4, 4);
+        this.ctx.fillRect(x + 50, y + 60, 4, 4);
+
+        this.ctx.restore();
+
+        // Draw Bowser's fireballs
+        for (const fb of bowser.fireballs) {
+            if (!fb.alive) continue;
+            const fbx = fb.x - cameraX;
+            const fby = fb.y;
+            const frame = Math.floor(fb.animTimer / 3) % 2;
+            this.ctx.fillStyle = frame === 0 ? '#ff4400' : '#ff8800';
+            this.ctx.fillRect(fbx, fby, fb.width, fb.height);
+            this.ctx.fillStyle = '#ffcc00';
+            this.ctx.fillRect(fbx + 3, fby + 2, fb.width - 6, fb.height - 4);
+            this.ctx.fillStyle = 'rgba(255, 100, 0, 0.2)';
+            this.ctx.beginPath();
+            this.ctx.arc(fbx + fb.width / 2, fby + fb.height / 2, 12, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
     }
 
     drawCoin(coin, cameraX) {
